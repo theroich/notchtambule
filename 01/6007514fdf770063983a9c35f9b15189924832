@@ -1,0 +1,92 @@
+.gitignore
+  h_c714c5d6d16f81 1-7
+Info.plist
+  h_c714c5d6d16f81 1-44
+Package.resolved
+  h_c714c5d6d16f81 1-15
+Package.swift
+  h_c714c5d6d16f81 1-48
+README.md
+  h_c714c5d6d16f81 1-266
+Scripts/build-app.sh
+  h_c714c5d6d16f81 1-49
+Sources/NotchTubeAudio/App/AppDelegate.swift
+  h_c714c5d6d16f81 1-28
+Sources/NotchTubeAudio/App/AppEnvironment.swift
+  h_c714c5d6d16f81 1-96
+Sources/NotchTubeAudio/App/NotchTubeAudioApp.swift
+  h_c714c5d6d16f81 1-26
+Sources/NotchTubeAudio/Models/AudioFormat.swift
+  h_c714c5d6d16f81 1-24
+Sources/NotchTubeAudio/Models/DetectedVideo.swift
+  h_c714c5d6d16f81 1-73
+Sources/NotchTubeAudio/Models/DownloadItem.swift
+  h_c714c5d6d16f81 1-104
+Sources/NotchTubeAudio/Models/DownloadStatus.swift
+  h_c714c5d6d16f81 1-30
+Sources/NotchTubeAudio/Models/NotchMode.swift
+  h_c714c5d6d16f81 1-18
+Sources/NotchTubeAudio/Models/YouTubeLink.swift
+  h_c714c5d6d16f81 1-51
+Sources/NotchTubeAudio/Services/BinaryLocator.swift
+  h_c714c5d6d16f81 1-58
+Sources/NotchTubeAudio/Services/ClipboardMonitor.swift
+  h_c714c5d6d16f81 1-104
+Sources/NotchTubeAudio/Services/DownloadManager.swift
+  h_c714c5d6d16f81 1-501
+Sources/NotchTubeAudio/Services/LineAccumulator.swift
+  h_c714c5d6d16f81 1-52
+Sources/NotchTubeAudio/Services/NotchController.swift
+  h_c714c5d6d16f81 1-435
+Sources/NotchTubeAudio/Services/NotchGeometry.swift
+  h_c714c5d6d16f81 1-98
+Sources/NotchTubeAudio/Services/ProcessOutputParser.swift
+  h_c714c5d6d16f81 1-140
+Sources/NotchTubeAudio/Services/YouTubeMetadataService.swift
+  h_c714c5d6d16f81 1-75
+Sources/NotchTubeAudio/Services/YouTubeURLParser.swift
+  h_c714c5d6d16f81 1-45
+Sources/NotchTubeAudio/Settings/SettingsManager.swift
+  h_c714c5d6d16f81 1-133
+Sources/NotchTubeAudio/State/AppState.swift
+  h_c714c5d6d16f81 1-160
+Sources/NotchTubeAudio/Utilities/FileActions.swift
+  h_c714c5d6d16f81 1-43
+Sources/NotchTubeAudio/Utilities/Logging.swift
+  h_c714c5d6d16f81 1-19
+Sources/NotchTubeAudio/Views/DownloadQueueView.swift
+  h_c714c5d6d16f81 1-117
+Sources/NotchTubeAudio/Views/DownloadRowView.swift
+  h_c714c5d6d16f81 1-150
+Sources/NotchTubeAudio/Views/FormatPills.swift
+  h_c714c5d6d16f81 1-46
+Sources/NotchTubeAudio/Views/MenuBarContent.swift
+  h_c714c5d6d16f81 1-47
+Sources/NotchTubeAudio/Views/NotchPromptView.swift
+  h_c714c5d6d16f81 1-96
+Sources/NotchTubeAudio/Views/NotchRootView.swift
+  h_c714c5d6d16f81 1-49
+Sources/NotchTubeAudio/Views/SettingsView.swift
+  h_c714c5d6d16f81 1-233
+Sources/NotchTubeAudio/Views/ThumbnailView.swift
+  h_c714c5d6d16f81 1-60
+Tests/NotchTubeAudioTests/DownloadManagerTests.swift
+  h_c714c5d6d16f81 1-229
+Tests/NotchTubeAudioTests/ProcessOutputParserTests.swift
+  h_c714c5d6d16f81 1-88
+Tests/NotchTubeAudioTests/SettingsManagerTests.swift
+  h_c714c5d6d16f81 1-44
+Tests/NotchTubeAudioTests/YouTubeURLParserTests.swift
+  h_c714c5d6d16f81 1-55
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.6",
+  "base_commit_sha": "016007514fdf770063983a9c35f9b15189924832",
+  "prompts": {},
+  "humans": {
+    "h_c714c5d6d16f81": {
+      "author": "roicastrocasal <roicc@inditex.com>"
+    }
+  }
+}
