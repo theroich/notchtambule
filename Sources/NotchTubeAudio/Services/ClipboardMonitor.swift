@@ -6,7 +6,8 @@
 import AppKit
 import Foundation
 
-/// Polls `NSPasteboard.general.changeCount` every 0.6 s looking for YouTube URLs.
+/// Polls the system pasteboard (`changeCount`) every 0.6 s and captures universal
+/// clipboard entries (``ClipboardItem``) across files, images, URLs, and plain text.
 ///
 /// The pasteboard contents present at launch are deliberately ignored: the
 /// first poll only records the current change count.
@@ -15,29 +16,35 @@ final class ClipboardMonitor {
     private static let pollInterval: TimeInterval = 0.6
 
     private let settings: SettingsManager
+    private let pasteboard: any PasteboardReading
     private var timer: Timer?
     private var lastChangeCount: Int
-    private var lastSeenString: String?
-    private(set) var lastDetectedLink: YouTubeLink?
+    private var ignoredChangeCount: Int?
+    private var lastContentHash: String?
+    private(set) var lastCapturedItem: ClipboardItem?
 
-    /// Invoked on the main actor whenever a new, different YouTube URL appears.
-    var onDetect: ((YouTubeLink) -> Void)?
+    /// Invoked on the main actor whenever a new, non-duplicate clipboard item is captured.
+    var onCapture: ((ClipboardItem) -> Void)?
 
     var isRunning: Bool {
         timer != nil
     }
 
-    init(settings: SettingsManager) {
+    init(
+        settings: SettingsManager,
+        pasteboard: any PasteboardReading = SystemPasteboardReader()
+    ) {
         self.settings = settings
-        self.lastChangeCount = NSPasteboard.general.changeCount
-        self.lastSeenString = nil
+        self.pasteboard = pasteboard
+        self.lastChangeCount = pasteboard.changeCount
+        self.lastContentHash = nil
     }
 
     func start() {
         stop()
 
-        // The current clipboard content must never trigger a prompt at launch.
-        lastChangeCount = NSPasteboard.general.changeCount
+        // The current clipboard content must never trigger a capture at launch.
+        lastChangeCount = pasteboard.changeCount
 
         let timer = Timer(timeInterval: Self.pollInterval, repeats: true) { [weak self] _ in
             Task { @MainActor in
@@ -56,49 +63,144 @@ final class ClipboardMonitor {
         timer = nil
     }
 
-    /// Reads the pasteboard immediately. Used by the "force detection" menu item.
+    /// Marks a specific `changeCount` (or the next change if `nil`) to be ignored by `poll()`.
     ///
-    /// - Parameter force: ignores the "same string twice" deduplication and the
-    ///   automatic monitoring toggle.
-    func detectCurrentPasteboard(force: Bool) -> YouTubeLink? {
-        guard let raw = NSPasteboard.general.string(forType: .string) else { return nil }
-        if !force, raw == lastSeenString { return nil }
-
-        lastSeenString = raw
-        guard let link = YouTubeURLParser.parse(raw) else { return nil }
-
-        lastDetectedLink = link
-        return link
+    /// Used when the clipboard manager itself writes an item back to `NSPasteboard`
+    /// so it does not trigger a new external capture or plugin prompt.
+    func ignoreNextChangeCount(_ count: Int? = nil) {
+        if let count {
+            ignoredChangeCount = count
+        } else {
+            ignoredChangeCount = pasteboard.changeCount + 1
+        }
     }
 
-    /// The URL currently on the pasteboard, if it is a valid YouTube link.
-    func currentPasteboardLink() -> YouTubeLink? {
-        YouTubeURLParser.parsePasteboardString(NSPasteboard.general.string(forType: .string))
-    }
-
-    private func poll() {
-        let pasteboard = NSPasteboard.general
+    /// Performs a single poll check on the pasteboard.
+    ///
+    /// Exposed internally so unit tests can drive polling deterministically with a `MockPasteboard`.
+    func poll() {
         let changeCount = pasteboard.changeCount
         guard changeCount != lastChangeCount else { return }
         lastChangeCount = changeCount
 
+        if let ignored = ignoredChangeCount, ignored == changeCount {
+            ignoredChangeCount = nil
+            Log.clipboard.debug("Cambio del portapapeles ignorado (auto-copia changeCount=\(changeCount))")
+            return
+        }
+        ignoredChangeCount = nil
+
         guard settings.isClipboardMonitoringEnabled else { return }
 
-        guard let raw = pasteboard.string(forType: .string) else {
-            // A non-text item (image, file…) counts as "something else was copied".
-            lastSeenString = nil
+        let currentTypes = Set(pasteboard.types)
+
+        // Never re-capture writes marked with our own internal marker.
+        if currentTypes.contains(PasteboardMarkerType.internalCaptureIgnore) {
+            Log.clipboard.debug("Cambio del portapapeles ignorado por marcador interno")
             return
         }
 
-        // Copying the same text twice without copying anything else in between
-        // must not reopen the notch.
-        guard raw != lastSeenString else { return }
-        lastSeenString = raw
+        // 1. Check confidential / transient pasteboard types if privacy filtering is enabled.
+        if settings.ignoreConfidentialPasteboardTypes,
+           !currentTypes.isDisjoint(with: PasteboardMarkerType.confidentialTypes) {
+            Log.clipboard.debug("Contenido confidencial o transitorio ignorado")
+            return
+        }
 
-        guard let link = YouTubeURLParser.parse(raw) else { return }
+        guard let payload = extractPayload() else {
+            // Unrecognized content clears consecutive hash deduplication so the previous
+            // item can be copied again right afterwards.
+            lastContentHash = nil
+            return
+        }
 
-        lastDetectedLink = link
-        Log.clipboard.info("URL de YouTube detectada: \(link.canonicalURLString, privacy: .public)")
-        onDetect?(link)
+        let item = ClipboardItem(
+            changeCount: changeCount,
+            payload: payload,
+            sourceApp: pasteboard.frontmostSourceApp()
+        )
+
+        // Consecutive identical copies must not emit duplicate events.
+        guard item.contentHash != lastContentHash else { return }
+        lastContentHash = item.contentHash
+        lastCapturedItem = item
+
+        Log.clipboard.info("Elemento del portapapeles capturado: \(item.contentType.rawValue, privacy: .public)")
+        onCapture?(item)
+    }
+
+    /// Reads the pasteboard immediately, bypassing the automatic monitoring toggle.
+    ///
+    /// - Parameter force: When `true`, ignores consecutive `contentHash` deduplication.
+    func captureCurrentPasteboard(force: Bool = false) -> ClipboardItem? {
+        let currentTypes = Set(pasteboard.types)
+        if !force,
+           settings.ignoreConfidentialPasteboardTypes,
+           !currentTypes.isDisjoint(with: PasteboardMarkerType.confidentialTypes) {
+            return nil
+        }
+
+        guard let payload = extractPayload() else { return nil }
+
+        let item = ClipboardItem(
+            changeCount: pasteboard.changeCount,
+            payload: payload,
+            sourceApp: pasteboard.frontmostSourceApp()
+        )
+
+        if !force, item.contentHash == lastContentHash {
+            return nil
+        }
+
+        lastContentHash = item.contentHash
+        lastCapturedItem = item
+        return item
+    }
+
+    /// Extracts the highest-priority `ClipboardPayload` currently present on the pasteboard.
+    ///
+    /// Priority order:
+    /// 1. File URLs (`isFileURL == true`)
+    /// 2. Image data (`.tiff` or `.png`)
+    /// 3. Text (`http://` or `https://` valid web URL -> `.url`, otherwise `.text`)
+    func extractPayload() -> ClipboardPayload? {
+        // 1. File URLs
+        let fileURLs = pasteboard.readFileURLs().filter(\.isFileURL)
+        if !fileURLs.isEmpty {
+            return .files(fileURLs)
+        }
+
+        // 2. Image data (.tiff or .png)
+        if let imageData = pasteboard.data(forType: .png) ?? pasteboard.data(forType: .tiff),
+           let imagePayload = ImagePayload(data: imageData) {
+            return .image(imagePayload)
+        }
+
+        // 3. Text or Web URL
+        if let raw = pasteboard.string(forType: .string) {
+            if let webURL = Self.parseHTTPURL(from: raw) {
+                return .url(webURL, rawText: raw)
+            }
+            return .text(raw)
+        }
+
+        return nil
+    }
+
+    /// Validates whether a raw pasteboard string is a single valid `http://` or `https://` URL.
+    private static func parseHTTPURL(from raw: String) -> URL? {
+        let trimmed = raw.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty,
+              !trimmed.contains(where: \.isWhitespace),
+              let components = URLComponents(string: trimmed),
+              let scheme = components.scheme?.lowercased(),
+              scheme == "http" || scheme == "https",
+              let host = components.host,
+              !host.isEmpty,
+              let url = components.url
+        else {
+            return nil
+        }
+        return url
     }
 }

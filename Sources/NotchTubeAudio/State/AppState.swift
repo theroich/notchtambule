@@ -52,10 +52,31 @@ final class AppState {
 
     // MARK: - Clipboard flow
 
-    /// Entry point used by ``ClipboardMonitor``.
+    /// Entry point used by ``ClipboardMonitor`` for universal clipboard items.
+    ///
+    /// Bridges `.url` and `.text` payloads containing a YouTube URL to the existing
+    /// prompt workflow until the plugin router (Issues #3–#5) takes over.
+    func handleClipboardItem(_ item: ClipboardItem) {
+        if let link = Self.extractYouTubeLink(from: item) {
+            handleClipboardLink(link)
+        }
+    }
+
+    /// Entry point for a validated YouTube link.
     func handleClipboardLink(_ link: YouTubeLink) {
         lastDetectedURLString = link.canonicalURLString
         presentPrompt(for: link)
+    }
+
+    static func extractYouTubeLink(from item: ClipboardItem) -> YouTubeLink? {
+        switch item.payload {
+        case .url(let url, let rawText):
+            return YouTubeURLParser.parse(rawText) ?? YouTubeURLParser.parse(url.absoluteString)
+        case .text(let text):
+            return YouTubeURLParser.parse(text)
+        case .files, .image:
+            return nil
+        }
     }
 
     func presentPrompt(for link: YouTubeLink) {

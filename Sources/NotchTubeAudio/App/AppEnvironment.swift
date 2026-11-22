@@ -39,8 +39,8 @@ final class AppEnvironment {
         self.notchController = notch
 
         appState.presenter = notch
-        clipboard.onDetect = { [weak appState] link in
-            appState?.handleClipboardLink(link)
+        clipboard.onCapture = { [weak appState] item in
+            appState?.handleClipboardItem(item)
         }
     }
 
@@ -79,7 +79,8 @@ final class AppEnvironment {
     /// Forces a notification for whatever YouTube link is on the pasteboard,
     /// even if automatic monitoring is disabled.
     func detectClipboardNow() {
-        guard let link = clipboardMonitor.detectCurrentPasteboard(force: true) else {
+        guard let item = clipboardMonitor.captureCurrentPasteboard(force: true),
+              let link = AppState.extractYouTubeLink(from: item) else {
             NSSound.beep()
             return
         }
@@ -87,7 +88,11 @@ final class AppEnvironment {
     }
 
     var hasClipboardLink: Bool {
-        clipboardMonitor.currentPasteboardLink() != nil
+        guard let payload = clipboardMonitor.extractPayload(),
+              let raw = payload.stringValue else {
+            return false
+        }
+        return YouTubeURLParser.parse(raw) != nil
     }
 
     var isNotchShowing: Bool {

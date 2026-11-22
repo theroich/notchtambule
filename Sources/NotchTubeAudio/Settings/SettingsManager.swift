@@ -26,6 +26,7 @@ final class SettingsManager {
         static let ytDlpPath = "notchtube.ytDlpPath"
         static let ffmpegPath = "notchtube.ffmpegPath"
         static let clipboardMonitoring = "notchtube.clipboardMonitoring"
+        static let ignoreConfidentialTypes = "notchtube.ignoreConfidentialTypes"
         static let promptDuration = "notchtube.promptDuration"
     }
 
@@ -58,6 +59,12 @@ final class SettingsManager {
     var isClipboardMonitoringEnabled: Bool {
         didSet {
             defaults.set(isClipboardMonitoringEnabled, forKey: Key.clipboardMonitoring)
+        }
+    }
+
+    var ignoreConfidentialPasteboardTypes: Bool {
+        didSet {
+            defaults.set(ignoreConfidentialPasteboardTypes, forKey: Key.ignoreConfidentialTypes)
         }
     }
 
@@ -104,6 +111,7 @@ final class SettingsManager {
         self.ffmpegPath = storedFFmpeg ?? BinaryLocator.locate("ffmpeg") ?? Self.defaultFFmpegPath
 
         self.isClipboardMonitoringEnabled = (defaults.object(forKey: Key.clipboardMonitoring) as? Bool) ?? true
+        self.ignoreConfidentialPasteboardTypes = (defaults.object(forKey: Key.ignoreConfidentialTypes) as? Bool) ?? true
 
         let storedDuration = (defaults.object(forKey: Key.promptDuration) as? Double) ?? Self.defaultPromptDuration
         self.promptAutoDismissSeconds = min(max(storedDuration, Self.minimumPromptDuration), Self.maximumPromptDuration)
