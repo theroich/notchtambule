@@ -140,7 +140,7 @@ final class NotchController: NotchPresenting {
         schedulePromptAutoDismiss()
     }
 
-    func presentDownloads(autoHideAfter seconds: TimeInterval?) {
+    func presentPanel(autoHideAfter seconds: TimeInterval?) {
         promptTimer?.cancel()
         promptTimer = nil
         autoHideTimer?.cancel()
@@ -162,7 +162,7 @@ final class NotchController: NotchPresenting {
         pendingPresentationScreen = nil
         wasInsideRetention = false
 
-        // Do not immediately re-open the queue when the user cancels the
+        // Do not immediately re-open the panel when the user cancels the
         // prompt while the cursor is still over the notch; wait until the
         // pointer leaves the trigger zone.
         suppressHoverUntilExit = isPointerInsideTriggerZone()
@@ -181,10 +181,10 @@ final class NotchController: NotchPresenting {
     func toggleFromMenu() {
         switch appState.notchMode {
         case .idle:
-            appState.showDownloadsFromMenu()
-        case .promptingURL:
+            appState.showPanelFromMenu()
+        case .promptingFeature:
             appState.dismissPrompt()
-        case .showingDownloads:
+        case .showingPanel:
             appState.hideFromHover()
         }
     }
@@ -285,12 +285,12 @@ final class NotchController: NotchPresenting {
             if insideTrigger {
                 if suppressHoverUntilExit { break }
                 pendingPresentationScreen = screen
-                appState.showDownloadsFromHover()
+                appState.showPanelFromHover()
             } else {
                 suppressHoverUntilExit = false
             }
 
-        case .promptingURL:
+        case .promptingFeature:
             if insideRetention {
                 promptTimer?.cancel()
                 promptTimer = nil
@@ -298,7 +298,7 @@ final class NotchController: NotchPresenting {
                 schedulePromptAutoDismiss()
             }
 
-        case .showingDownloads:
+        case .showingPanel:
             if insideRetention {
                 autoHideTimer?.cancel()
                 autoHideTimer = nil
@@ -341,7 +341,7 @@ final class NotchController: NotchPresenting {
         promptTimer = Task { [weak self] in
             try? await Task.sleep(for: .seconds(duration))
             guard !Task.isCancelled, let self else { return }
-            guard self.appState.notchMode == .promptingURL else { return }
+            guard self.appState.notchMode.isPrompting else { return }
 
             if self.isPointerInsideRetentionZone() {
                 self.schedulePromptAutoDismiss()
@@ -357,7 +357,7 @@ final class NotchController: NotchPresenting {
         autoHideTimer = Task { [weak self] in
             try? await Task.sleep(for: .seconds(seconds))
             guard !Task.isCancelled, let self else { return }
-            guard self.appState.notchMode == .showingDownloads else { return }
+            guard self.appState.notchMode.isShowingPanel else { return }
 
             if self.isPointerInsideRetentionZone() {
                 self.autoHideTimer = nil
@@ -373,7 +373,7 @@ final class NotchController: NotchPresenting {
         collapseTask = Task { [weak self] in
             try? await Task.sleep(for: .milliseconds(220))
             guard !Task.isCancelled, let self else { return }
-            guard self.appState.notchMode == .showingDownloads else { return }
+            guard self.appState.notchMode.isShowingPanel else { return }
             guard !self.isPointerInsideRetentionZone() else { return }
             self.appState.hideFromHover()
         }
@@ -408,22 +408,35 @@ final class NotchController: NotchPresenting {
     /// Estimated inner content size used to compute the retention zone. It is
     /// intentionally generous: an exact measurement is not needed thanks to the
     /// 25 pt margin.
-    private var currentContentSize: CGSize {
+    var currentContentSize: CGSize {
+        let navigationHeaderHeight: CGFloat = appState.featureRegistry.activityPanelPlugins.isEmpty ? 0 : 34
+
         switch appState.notchMode {
         case .idle:
             return CGSize(width: NotchMetrics.contentWidth, height: 120)
-        case .promptingURL:
-            return CGSize(width: NotchMetrics.contentWidth, height: 128)
-        case .showingDownloads:
-            let rows = max(appState.downloadManager.items.count, 1)
-            let listHeight = min(
-                CGFloat(rows) * NotchMetrics.queueRowHeight,
-                NotchMetrics.queueListMaxHeight
-            )
-            return CGSize(
-                width: NotchMetrics.contentWidth,
-                height: NotchMetrics.queueHeaderHeight + 10 + listHeight
-            )
+
+        case .promptingFeature:
+            return CGSize(width: NotchMetrics.contentWidth, height: 156)
+
+        case .showingPanel(let tab):
+            switch tab {
+            case .clipboardHistory:
+                let rows = max(appState.historyStore.filteredItems.count, 1)
+                let listHeight = min(
+                    CGFloat(rows) * NotchMetrics.queueRowHeight,
+                    NotchMetrics.queueListMaxHeight
+                )
+                return CGSize(
+                    width: NotchMetrics.contentWidth,
+                    height: navigationHeaderHeight + NotchMetrics.queueHeaderHeight + 16 + listHeight
+                )
+
+            case .pluginActivity:
+                return CGSize(
+                    width: NotchMetrics.contentWidth,
+                    height: navigationHeaderHeight + NotchMetrics.queueHeaderHeight + 16 + NotchMetrics.queueListMaxHeight
+                )
+            }
         }
     }
 }

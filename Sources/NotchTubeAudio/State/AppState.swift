@@ -10,171 +10,251 @@ import Observation
 /// presentation so the state object stays free of AppKit and SwiftUI details.
 @MainActor
 protocol NotchPresenting: AnyObject {
-    /// Expand the notch showing the detected link prompt.
+    /// Expand the notch showing a plugin prompt.
     func presentPrompt()
-    /// Expand the notch showing the download queue.
+    /// Expand the notch showing the panel (clipboard history or plugin activity).
     /// - Parameter autoHideAfter: hides automatically when the pointer is not
     ///   inside the notch. `nil` keeps it open until the pointer leaves.
-    func presentDownloads(autoHideAfter seconds: TimeInterval?)
+    func presentPanel(autoHideAfter seconds: TimeInterval?)
     /// Collapse the notch.
     func hide()
 }
 
-/// Global application state: the current notch mode, the detected video and the
-/// metadata request lifecycle.
+extension NotchPresenting {
+    /// Backward-compatible alias for `presentPanel(autoHideAfter:)`.
+    func presentDownloads(autoHideAfter seconds: TimeInterval?) {
+        presentPanel(autoHideAfter: seconds)
+    }
+}
+
+/// Global application orchestrator: coordinates the clipboard history store,
+/// registered feature plugins, and the notch presentation state machine.
 @MainActor
 @Observable
 final class AppState {
-    private(set) var notchMode: NotchMode = .idle
-    private(set) var detectedVideo: DetectedVideo?
-    private(set) var lastDetectedURLString: String?
-
-    /// Format preselected in the prompt. Reset on every new detection.
-    var promptFormat: AudioFormat
-
     let settings: SettingsManager
-    let downloadManager: DownloadManager
+    let historyStore: ClipboardHistoryStore
+    let featureRegistry: FeatureRegistry
+
+    private(set) var notchMode: NotchMode = .idle
+    var activeTab: NotchPanelTab = .clipboardHistory
+    private(set) var activeNotification: FeatureUserNotification?
 
     @ObservationIgnored weak var presenter: (any NotchPresenting)?
-    @ObservationIgnored private let metadataService: YouTubeMetadataService
-    @ObservationIgnored private var metadataTask: Task<Void, Never>?
+
+    /// Context shared with feature plugins so they can write back to the clipboard,
+    /// request prompts, switch to their activity panel, or hide the notch.
+    @ObservationIgnored lazy var actionContext: FeatureActionContext = {
+        FeatureActionContext(
+            onWriteToClipboard: { [weak self] payload in
+                self?.writePayloadToClipboard(payload)
+            },
+            onPresentPluginPrompt: { [weak self] pluginID, item in
+                self?.presentPluginPrompt(pluginID: pluginID, for: item)
+            },
+            onSwitchToPluginActivity: { [weak self] pluginID in
+                self?.switchToPluginActivity(pluginID: pluginID, autoHideAfter: 4)
+            },
+            onHideNotch: { [weak self] in
+                self?.hideNotch()
+            },
+            onNotifyUser: { [weak self] message, icon in
+                self?.notifyUser(message: message, icon: icon)
+            }
+        )
+    }()
 
     init(
         settings: SettingsManager,
-        downloadManager: DownloadManager,
-        metadataService: YouTubeMetadataService
+        historyStore: ClipboardHistoryStore,
+        featureRegistry: FeatureRegistry
     ) {
         self.settings = settings
-        self.downloadManager = downloadManager
-        self.metadataService = metadataService
-        self.promptFormat = settings.defaultFormat
+        self.historyStore = historyStore
+        self.featureRegistry = featureRegistry
     }
 
     // MARK: - Clipboard flow
 
-    /// Entry point used by ``ClipboardMonitor`` for universal clipboard items.
+    /// Main entry point when ``ClipboardMonitor`` captures a new clipboard item.
     ///
-    /// Bridges `.url` and `.text` payloads containing a YouTube URL to the existing
-    /// prompt workflow until the plugin router (Issues #3–#5) takes over.
+    /// 1. Evaluates matching enabled plugins in `featureRegistry`.
+    /// 2. Annotates `item.detectedFeatureIDs`.
+    /// 3. Records the item in `historyStore`.
+    /// 4. If a primary plugin is configured with `.automaticPrompt`, transitions to
+    ///    `.promptingFeature(pluginID:item:)` and expands the notch prompt.
+    ///    Otherwise, stores the item silently in the history.
+    func handleCapturedItem(_ item: ClipboardItem) {
+        let matchedPlugins = featureRegistry.matchingPlugins(for: item)
+        var annotatedItem = item
+        annotatedItem.detectedFeatureIDs = matchedPlugins.map(\.id)
+
+        historyStore.record(annotatedItem)
+
+        let storedItem = historyStore.items.first(where: { $0.contentHash == annotatedItem.contentHash }) ?? annotatedItem
+
+        if let promptPlugin = featureRegistry.primaryPromptPlugin(for: storedItem, context: actionContext) {
+            notchMode = .promptingFeature(pluginID: promptPlugin.id, item: storedItem)
+            presenter?.presentPrompt()
+        }
+    }
+
+    /// Alias for `handleCapturedItem(_:)` used by existing callers.
     func handleClipboardItem(_ item: ClipboardItem) {
-        if let link = Self.extractYouTubeLink(from: item) {
-            handleClipboardLink(link)
+        handleCapturedItem(item)
+    }
+
+    // MARK: - Prompt & Plugin Actions
+
+    /// Presents the full prompt for a specific plugin and clipboard item.
+    func presentPluginPrompt(pluginID: String, for item: ClipboardItem) {
+        guard let plugin = featureRegistry.plugin(withID: pluginID),
+              featureRegistry.isPluginEnabled(pluginID),
+              plugin.makePromptView(for: item, context: actionContext, onComplete: {}, onDismiss: {}) != nil else {
+            return
         }
-    }
-
-    /// Entry point for a validated YouTube link.
-    func handleClipboardLink(_ link: YouTubeLink) {
-        lastDetectedURLString = link.canonicalURLString
-        presentPrompt(for: link)
-    }
-
-    static func extractYouTubeLink(from item: ClipboardItem) -> YouTubeLink? {
-        switch item.payload {
-        case .url(let url, let rawText):
-            return YouTubeURLParser.parse(rawText) ?? YouTubeURLParser.parse(url.absoluteString)
-        case .text(let text):
-            return YouTubeURLParser.parse(text)
-        case .files, .image:
-            return nil
-        }
-    }
-
-    func presentPrompt(for link: YouTubeLink) {
-        metadataTask?.cancel()
-
-        let placeholder = DetectedVideo(link: link)
-        detectedVideo = placeholder
-        promptFormat = settings.defaultFormat
-        notchMode = .promptingURL
+        notchMode = .promptingFeature(pluginID: pluginID, item: item)
         presenter?.presentPrompt()
+    }
 
-        metadataTask = Task { [weak self] in
-            guard let self else { return }
+    /// Completes the active prompt: if the plugin has an activity panel, transitions to it;
+    /// otherwise collapses the notch unless the plugin already transitioned `notchMode`.
+    func completePrompt(for pluginID: String) {
+        if case .showingPanel = notchMode {
+            return
+        }
 
-            let metadata = await self.metadataService.metadata(for: link)
-            guard !Task.isCancelled else { return }
-
-            // The user may have closed the prompt, saved it or copied another
-            // link while the request was in flight.
-            guard
-                let current = self.detectedVideo,
-                current.videoID == link.videoID,
-                self.notchMode == .promptingURL
-            else { return }
-
-            if let metadata {
-                self.detectedVideo = current.applying(metadata)
-            } else {
-                // Fallback: keep the clean URL as the title.
-                self.detectedVideo = current.finishedLoading()
-            }
+        if let plugin = featureRegistry.plugin(withID: pluginID),
+           featureRegistry.isPluginEnabled(pluginID),
+           plugin.hasActivityPanel {
+            switchToPluginActivity(pluginID: pluginID, autoHideAfter: 4)
+        } else if case .promptingFeature(let currentPluginID, _) = notchMode, currentPluginID == pluginID {
+            notchMode = .idle
+            presenter?.hide()
         }
     }
 
-    // MARK: - Prompt actions
-
-    func savePrompt(format: AudioFormat) {
-        guard notchMode == .promptingURL, let video = detectedVideo else { return }
-
-        metadataTask?.cancel()
-        promptFormat = format
-        detectedVideo = nil
-        downloadManager.enqueue(video: video, format: format)
-
-        notchMode = .showingDownloads
-        // Show the progress briefly, then let the hover logic take over.
-        presenter?.presentDownloads(autoHideAfter: 4)
-    }
-
+    /// Dismisses a currently displayed plugin prompt and collapses the notch.
     func dismissPrompt() {
-        guard notchMode == .promptingURL else { return }
-        metadataTask?.cancel()
-        detectedVideo = nil
+        guard notchMode.isPrompting else { return }
         notchMode = .idle
         presenter?.hide()
     }
 
-    /// Called by the auto-dismiss timer.
+    /// Called by the auto-dismiss timer when a prompt times out.
     func dismissPromptFromTimeout() {
         dismissPrompt()
     }
 
-    // MARK: - Downloads view
+    /// Returns from an active plugin prompt directly to the clipboard history tab in the notch.
+    func returnToHistoryFromPrompt() {
+        selectTab(.clipboardHistory)
+    }
+
+    // MARK: - Panel & Tab Navigation
+
+    /// Selects a tab and presents the notch panel.
+    func selectTab(_ tab: NotchPanelTab, autoHideAfter seconds: TimeInterval? = nil) {
+        let resolvedTab = validatedTab(tab)
+        activeTab = resolvedTab
+        notchMode = .showingPanel(tab: resolvedTab)
+        presenter?.presentPanel(autoHideAfter: seconds)
+    }
+
+    /// Transitions to a plugin's activity panel tab in the notch.
+    func switchToPluginActivity(pluginID: String, autoHideAfter seconds: TimeInterval? = 4) {
+        let tab: NotchPanelTab = .pluginActivity(pluginID: pluginID)
+        activeTab = tab
+        notchMode = .showingPanel(tab: tab)
+        presenter?.presentPanel(autoHideAfter: seconds)
+    }
 
     /// Triggered when the pointer enters the notch hover zone.
-    func showDownloadsFromHover() {
-        guard notchMode != .promptingURL else { return }
-        guard notchMode != .showingDownloads else { return }
+    func showPanelFromHover() {
+        guard !notchMode.isPrompting else { return }
+        guard !notchMode.isShowingPanel else { return }
 
-        notchMode = .showingDownloads
-        presenter?.presentDownloads(autoHideAfter: nil)
+        let tab = validatedTab(activeTab)
+        activeTab = tab
+        notchMode = .showingPanel(tab: tab)
+        presenter?.presentPanel(autoHideAfter: nil)
+    }
+
+    /// Backward-compatible alias for `showPanelFromHover()`.
+    func showDownloadsFromHover() {
+        showPanelFromHover()
     }
 
     /// Opened explicitly from the menu bar.
+    func showPanelFromMenu(tab: NotchPanelTab? = nil, autoHideAfter seconds: TimeInterval? = 6) {
+        guard !notchMode.isPrompting else { return }
+
+        let resolvedTab = validatedTab(tab ?? activeTab)
+        activeTab = resolvedTab
+        notchMode = .showingPanel(tab: resolvedTab)
+        presenter?.presentPanel(autoHideAfter: seconds)
+    }
+
+    /// Backward-compatible alias for `showPanelFromMenu()`.
     func showDownloadsFromMenu() {
-        guard notchMode != .promptingURL else { return }
-        notchMode = .showingDownloads
-        presenter?.presentDownloads(autoHideAfter: 6)
+        showPanelFromMenu()
     }
 
     func hideFromHover() {
-        guard notchMode == .showingDownloads else { return }
+        guard notchMode.isShowingPanel else { return }
         notchMode = .idle
         presenter?.hide()
     }
 
     func hideFromTimeout() {
-        guard notchMode == .showingDownloads else { return }
+        guard notchMode.isShowingPanel else { return }
         notchMode = .idle
         presenter?.hide()
+    }
+
+    func hideNotch() {
+        guard notchMode != .idle else { return }
+        notchMode = .idle
+        presenter?.hide()
+    }
+
+    // MARK: - Context helpers
+
+    private func writePayloadToClipboard(_ payload: ClipboardPayload) {
+        var newItem = ClipboardItem(
+            changeCount: 0,
+            payload: payload
+        )
+        let matchedPlugins = featureRegistry.matchingPlugins(for: newItem)
+        newItem.detectedFeatureIDs = matchedPlugins.map(\.id)
+        historyStore.copyToPasteboard(newItem)
+    }
+
+    private func notifyUser(message: String, icon: String) {
+        activeNotification = FeatureUserNotification(message: message, icon: icon)
+    }
+
+    /// Ensures the requested tab is still valid (e.g. if a plugin was disabled, falls back to `.clipboardHistory`).
+    private func validatedTab(_ tab: NotchPanelTab) -> NotchPanelTab {
+        switch tab {
+        case .clipboardHistory:
+            return .clipboardHistory
+        case .pluginActivity(let pluginID):
+            if let plugin = featureRegistry.plugin(withID: pluginID),
+               featureRegistry.isPluginEnabled(pluginID),
+               plugin.hasActivityPanel {
+                return tab
+            }
+            return .clipboardHistory
+        }
     }
 
     // MARK: - Lifecycle
 
     func shutdown() {
-        metadataTask?.cancel()
-        metadataTask = nil
-        detectedVideo = nil
+        featureRegistry.shutdownAll()
+        historyStore.flushPendingPersistence()
+        activeNotification = nil
         notchMode = .idle
         presenter?.hide()
     }

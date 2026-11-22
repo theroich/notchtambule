@@ -7,10 +7,14 @@ import SwiftUI
 
 /// Scrollable queue shown when hovering the notch.
 struct DownloadQueueView: View {
-    let appState: AppState
+    let downloadManager: DownloadManager
+
+    init(downloadManager: DownloadManager) {
+        self.downloadManager = downloadManager
+    }
 
     private var manager: DownloadManager {
-        appState.downloadManager
+        downloadManager
     }
 
     var body: some View {

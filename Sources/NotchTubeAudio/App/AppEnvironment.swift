@@ -14,6 +14,8 @@ final class AppEnvironment {
 
     let settings: SettingsManager
     let downloadManager: DownloadManager
+    let historyStore: ClipboardHistoryStore
+    let featureRegistry: FeatureRegistry
     let appState: AppState
     let clipboardMonitor: ClipboardMonitor
     let notchController: NotchController
@@ -23,24 +25,30 @@ final class AppEnvironment {
     private init() {
         let settings = SettingsManager()
         let downloads = DownloadManager(settings: settings)
-        let metadata = YouTubeMetadataService()
+        let clipboard = ClipboardMonitor(settings: settings)
+        let historyStore = ClipboardHistoryStore(
+            settings: settings,
+            clipboardMonitor: clipboard
+        )
+        let featureRegistry = FeatureRegistry(settings: settings)
         let appState = AppState(
             settings: settings,
-            downloadManager: downloads,
-            metadataService: metadata
+            historyStore: historyStore,
+            featureRegistry: featureRegistry
         )
-        let clipboard = ClipboardMonitor(settings: settings)
         let notch = NotchController(appState: appState, settings: settings)
 
         self.settings = settings
         self.downloadManager = downloads
+        self.historyStore = historyStore
+        self.featureRegistry = featureRegistry
         self.appState = appState
         self.clipboardMonitor = clipboard
         self.notchController = notch
 
         appState.presenter = notch
         clipboard.onCapture = { [weak appState] item in
-            appState?.handleClipboardItem(item)
+            appState?.handleCapturedItem(item)
         }
     }
 
@@ -49,6 +57,7 @@ final class AppEnvironment {
         isStarted = true
 
         NSApp.setActivationPolicy(.accessory)
+        featureRegistry.startAllEnabled()
         notchController.start()
         clipboardMonitor.start()
 
@@ -76,15 +85,14 @@ final class AppEnvironment {
         FileActions.openFolder(settings.downloadDirectory)
     }
 
-    /// Forces a notification for whatever YouTube link is on the pasteboard,
+    /// Forces capture of the current pasteboard item and routes it through `AppState`,
     /// even if automatic monitoring is disabled.
     func detectClipboardNow() {
-        guard let item = clipboardMonitor.captureCurrentPasteboard(force: true),
-              let link = AppState.extractYouTubeLink(from: item) else {
+        guard let item = clipboardMonitor.captureCurrentPasteboard(force: true) else {
             NSSound.beep()
             return
         }
-        appState.handleClipboardLink(link)
+        appState.handleCapturedItem(item)
     }
 
     var hasClipboardLink: Bool {
