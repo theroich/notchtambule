@@ -8,10 +8,12 @@ import AppKit
 /// Shared sizing constants for the notch content.
 enum NotchMetrics {
     /// Inner content width. DynamicNotchKit adds 15 pt of horizontal insets.
-    static let contentWidth: CGFloat = 410
+    static let contentWidth: CGFloat = 440
     static let queueRowHeight: CGFloat = 62
-    static let queueListMaxHeight: CGFloat = 240
+    static let clipboardRowHeight: CGFloat = 56
+    static let queueListMaxHeight: CGFloat = 276
     static let queueHeaderHeight: CGFloat = 30
+    static let clipboardControlsHeight: CGFloat = 64
 
     /// Extra distance around the notch that counts as "near the notch".
     static let triggerMargin: CGFloat = 15

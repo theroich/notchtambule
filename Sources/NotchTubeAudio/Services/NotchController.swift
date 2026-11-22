@@ -423,12 +423,12 @@ final class NotchController: NotchPresenting {
             case .clipboardHistory:
                 let rows = max(appState.historyStore.filteredItems.count, 1)
                 let listHeight = min(
-                    CGFloat(rows) * NotchMetrics.queueRowHeight,
+                    CGFloat(rows) * NotchMetrics.clipboardRowHeight,
                     NotchMetrics.queueListMaxHeight
                 )
                 return CGSize(
                     width: NotchMetrics.contentWidth,
-                    height: navigationHeaderHeight + NotchMetrics.queueHeaderHeight + 16 + listHeight
+                    height: navigationHeaderHeight + NotchMetrics.clipboardControlsHeight + 16 + listHeight
                 )
 
             case .pluginActivity:
