@@ -289,11 +289,154 @@ struct ClipboardNotchUITests {
         tabsHosting.layoutSubtreeIfNeeded()
 
         harness.appState.selectTab(.pluginActivity(pluginID: youtubePlugin.id))
+        #expect(harness.appState.activeTab == .pluginActivity(pluginID: youtubePlugin.id))
         #expect(harness.appState.notchMode == .showingPanel(tab: .pluginActivity(pluginID: youtubePlugin.id)))
         hostingView.rootView = NotchRootView(appState: harness.appState)
         hostingView.layoutSubtreeIfNeeded()
 
         harness.appState.selectTab(.clipboardHistory)
+        #expect(harness.appState.activeTab == .clipboardHistory)
         #expect(harness.appState.notchMode == .showingPanel(tab: .clipboardHistory))
+    }
+
+    @Test func clickingNotchHeaderTabsSwitchesBetweenDownloadsAndClipboardHistory() throws {
+        let suiteName = "notchtube.clipboard.ui.real.\(UUID().uuidString)"
+        let defaults = try #require(UserDefaults(suiteName: suiteName))
+        defaults.removePersistentDomain(forName: suiteName)
+        defer { defaults.removePersistentDomain(forName: suiteName) }
+
+        let settings = SettingsManager(defaults: defaults)
+        settings.persistClipboardHistory = false
+
+        let downloadManager = DownloadManager(settings: settings)
+        let youtubePlugin = YouTubeAudioFeaturePlugin(
+            settings: settings,
+            downloadManager: downloadManager
+        )
+        let harness = try makeHarness(plugins: [youtubePlugin])
+        defer { harness.cleanup() }
+
+        #expect(youtubePlugin.activityPanelTitle == "Descargas")
+        #expect(youtubePlugin.hasActivityPanel == true)
+        #expect(harness.featureRegistry.isPluginEnabled(youtubePlugin.id) == true)
+
+        for idx in 1...3 {
+            harness.historyStore.record(
+                ClipboardItem(changeCount: idx, payload: .text("Ítem \(idx)"))
+            )
+        }
+
+        // Open notch panel in clipboardHistory tab
+        harness.appState.showPanelFromHover()
+        #expect(harness.appState.activeTab == .clipboardHistory)
+        #expect(harness.appState.notchMode == .showingPanel(tab: .clipboardHistory))
+
+        let downloadsTab = NotchPanelTab.pluginActivity(pluginID: youtubePlugin.id)
+
+        // Verify actual mouse click hit-testing inside NSHostingView on the 'Descargas' and 'Portapapeles' tab pills
+        let headerView = NotchHeaderTabsView(
+            selectedTab: harness.appState.activeTab,
+            clipboardItemCount: harness.historyStore.items.count,
+            activityPlugins: harness.featureRegistry.activityPanelPlugins,
+            onSelectTab: { selected in
+                harness.appState.selectTab(selected)
+            }
+        )
+        let headerHosting = NSHostingView(rootView: headerView)
+        let headerSize = headerHosting.fittingSize
+        headerHosting.frame = NSRect(origin: .zero, size: headerSize)
+        let headerWindow = NSWindow(
+            contentRect: NSRect(origin: .zero, size: headerSize),
+            styleMask: [.borderless],
+            backing: .buffered,
+            defer: false
+        )
+        headerWindow.contentView = headerHosting
+        headerHosting.layoutSubtreeIfNeeded()
+
+        // Click on the right side ('Descargas' pill) of NotchHeaderTabsView
+        let descargasPoint = NSPoint(x: headerSize.width - 45, y: headerSize.height / 2)
+        let descargasHit = try #require(headerHosting.hitTest(descargasPoint))
+        // Ensure it does NOT hit an NSClipView (which would eat clicks without forwarding to the SwiftUI Button)
+        #expect(!String(describing: type(of: descargasHit)).contains("NSClipView"))
+        if let down = NSEvent.mouseEvent(
+            with: .leftMouseDown,
+            location: descargasPoint,
+            modifierFlags: [],
+            timestamp: ProcessInfo.processInfo.systemUptime,
+            windowNumber: headerWindow.windowNumber,
+            context: nil,
+            eventNumber: 100,
+            clickCount: 1,
+            pressure: 1.0
+        ), let up = NSEvent.mouseEvent(
+            with: .leftMouseUp,
+            location: descargasPoint,
+            modifierFlags: [],
+            timestamp: ProcessInfo.processInfo.systemUptime + 0.01,
+            windowNumber: headerWindow.windowNumber,
+            context: nil,
+            eventNumber: 101,
+            clickCount: 1,
+            pressure: 0.0
+        ) {
+            descargasHit.mouseDown(with: down)
+            descargasHit.mouseUp(with: up)
+        }
+        #expect(harness.appState.activeTab == downloadsTab)
+        #expect(harness.appState.notchMode == .showingPanel(tab: downloadsTab))
+
+        // Verify NotchRootView reflects the new tab content height
+        let historyRootHosting = NSHostingView(rootView: NotchRootView(appState: harness.appState))
+        historyRootHosting.frame = NSRect(x: 0, y: 0, width: NotchMetrics.contentWidth, height: 360)
+        historyRootHosting.layoutSubtreeIfNeeded()
+        let downloadsFittingHeight = historyRootHosting.fittingSize.height
+        #expect(historyRootHosting.fittingSize.width == NotchMetrics.contentWidth)
+
+        // Update headerView with the new selectedTab and click on the left side ('Portapapeles' pill)
+        headerHosting.rootView = NotchHeaderTabsView(
+            selectedTab: harness.appState.activeTab,
+            clipboardItemCount: harness.historyStore.items.count,
+            activityPlugins: harness.featureRegistry.activityPanelPlugins,
+            onSelectTab: { selected in
+                harness.appState.selectTab(selected)
+            }
+        )
+        headerHosting.layoutSubtreeIfNeeded()
+
+        let portapapelesPoint = NSPoint(x: 45, y: headerSize.height / 2)
+        let portapapelesHit = try #require(headerHosting.hitTest(portapapelesPoint))
+        #expect(!String(describing: type(of: portapapelesHit)).contains("NSClipView"))
+        if let down = NSEvent.mouseEvent(
+            with: .leftMouseDown,
+            location: portapapelesPoint,
+            modifierFlags: [],
+            timestamp: ProcessInfo.processInfo.systemUptime + 0.05,
+            windowNumber: headerWindow.windowNumber,
+            context: nil,
+            eventNumber: 102,
+            clickCount: 1,
+            pressure: 1.0
+        ), let up = NSEvent.mouseEvent(
+            with: .leftMouseUp,
+            location: portapapelesPoint,
+            modifierFlags: [],
+            timestamp: ProcessInfo.processInfo.systemUptime + 0.06,
+            windowNumber: headerWindow.windowNumber,
+            context: nil,
+            eventNumber: 103,
+            clickCount: 1,
+            pressure: 0.0
+        ) {
+            portapapelesHit.mouseDown(with: down)
+            portapapelesHit.mouseUp(with: up)
+        }
+        #expect(harness.appState.activeTab == .clipboardHistory)
+        #expect(harness.appState.notchMode == .showingPanel(tab: .clipboardHistory))
+
+        historyRootHosting.rootView = NotchRootView(appState: harness.appState)
+        historyRootHosting.layoutSubtreeIfNeeded()
+        let historyFittingHeight = historyRootHosting.fittingSize.height
+        #expect(historyFittingHeight > downloadsFittingHeight)
     }
 }

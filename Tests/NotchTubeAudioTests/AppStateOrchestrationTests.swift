@@ -287,6 +287,17 @@ struct AppStateOrchestrationTests {
         harness.appState.showPanelFromHover()
         #expect(harness.appState.notchMode == .showingPanel(tab: .clipboardHistory))
         #expect(harness.appState.activeTab == .clipboardHistory)
+
+        // 6. Calling selectTab(.pluginActivity) while plugin is disabled falls back to .clipboardHistory
+        harness.appState.selectTab(pluginTab)
+        #expect(harness.appState.activeTab == .clipboardHistory)
+        #expect(harness.appState.notchMode == .showingPanel(tab: .clipboardHistory))
+
+        // 7. Re-enabling the plugin allows selectTab(.pluginActivity) to resolve to .pluginActivity
+        harness.featureRegistry.setPluginEnabled(activityPlugin.id, true)
+        harness.appState.selectTab(pluginTab)
+        #expect(harness.appState.activeTab == pluginTab)
+        #expect(harness.appState.notchMode == .showingPanel(tab: pluginTab))
     }
 
     @Test func promptLifecycleDismissCompleteAndReturnToHistoryTransitions() throws {

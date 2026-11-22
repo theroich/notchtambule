@@ -87,11 +87,12 @@ struct NotchRootView: View {
 
     private func panelContainerView(tab: NotchPanelTab) -> some View {
         let activityPlugins = appState.featureRegistry.activityPanelPlugins
+        let currentTab = appState.activeTab
 
         return VStack(alignment: .leading, spacing: 8) {
             if !activityPlugins.isEmpty {
                 NotchHeaderTabsView(
-                    selectedTab: tab,
+                    selectedTab: currentTab,
                     clipboardItemCount: appState.historyStore.items.count,
                     activityPlugins: activityPlugins,
                     onSelectTab: { selected in
@@ -100,19 +101,24 @@ struct NotchRootView: View {
                 )
             }
 
-            switch tab {
-            case .clipboardHistory:
-                clipboardHistoryView
-
-            case .pluginActivity(let pluginID):
-                if let plugin = appState.featureRegistry.plugin(withID: pluginID),
-                   let activityView = plugin.makeActivityPanelView(context: appState.actionContext) {
-                    activityView
-                } else {
+            Group {
+                switch currentTab {
+                case .clipboardHistory:
                     clipboardHistoryView
+
+                case .pluginActivity(let pluginID):
+                    if let plugin = appState.featureRegistry.plugin(withID: pluginID),
+                       let activityView = plugin.makeActivityPanelView(context: appState.actionContext) {
+                        activityView
+                    } else {
+                        clipboardHistoryView
+                    }
                 }
             }
+            .id(currentTab)
+            .frame(maxWidth: .infinity, alignment: .leading)
         }
+        .frame(maxWidth: .infinity, alignment: .leading)
         .padding(.horizontal, 4)
         .padding(.bottom, 1)
     }
