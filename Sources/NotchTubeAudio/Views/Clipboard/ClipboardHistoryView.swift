@@ -3,6 +3,7 @@
 //  NotchTubeAudio
 //
 
+import AppKit
 import SwiftUI
 
 /// Main notch view for the Clipboard Manager: instant search bar, category filter pills,
@@ -13,8 +14,11 @@ struct ClipboardHistoryView: View {
     let featureRegistry: FeatureRegistry
     let actionContext: FeatureActionContext
     var activeNotification: FeatureUserNotification?
+    var isAutoPasteEnabled: Bool = false
+    var onSelectItem: (@MainActor (ClipboardItem, Bool) async -> PasteResult)? = nil
 
-    @State private var copiedItemID: UUID?
+    @State private var feedbackItemID: UUID?
+    @State private var feedbackState: ClipboardItemClickFeedback = .copied
     @State private var copyFeedbackTask: Task<Void, Never>?
 
     var body: some View {
@@ -47,7 +51,9 @@ struct ClipboardHistoryView: View {
                                     context: actionContext
                                 ),
                                 matchedPlugins: featureRegistry.matchingPlugins(for: item),
-                                isCopiedFeedbackActive: copiedItemID == item.id,
+                                isCopiedFeedbackActive: feedbackItemID == item.id,
+                                feedbackState: feedbackItemID == item.id ? feedbackState : .copied,
+                                isAutoPasteEnabled: isAutoPasteEnabled,
                                 onCopy: {
                                     handleCopy(item)
                                 },
@@ -225,19 +231,48 @@ struct ClipboardHistoryView: View {
     }
 
     private func handleCopy(_ item: ClipboardItem) {
-        store.copyToPasteboard(item)
-        withAnimation(.easeInOut(duration: 0.16)) {
-            copiedItemID = item.id
-        }
+        let forceCopyOnly = NSEvent.modifierFlags.contains(.option)
 
         copyFeedbackTask?.cancel()
         let itemID = item.id
-        copyFeedbackTask = Task { @MainActor in
-            try? await Task.sleep(for: .milliseconds(1100))
-            guard !Task.isCancelled else { return }
-            if copiedItemID == itemID {
+
+        if let onSelectItem {
+            let expectedState: ClipboardItemClickFeedback = (!forceCopyOnly && isAutoPasteEnabled) ? .pasted : .copied
+            withAnimation(.easeInOut(duration: 0.16)) {
+                feedbackState = expectedState
+                feedbackItemID = itemID
+            }
+
+            copyFeedbackTask = Task { @MainActor in
+                let result = await onSelectItem(item, forceCopyOnly)
+                guard !Task.isCancelled else { return }
                 withAnimation(.easeInOut(duration: 0.16)) {
-                    copiedItemID = nil
+                    feedbackState = result.didPaste ? .pasted : .copied
+                    feedbackItemID = itemID
+                }
+
+                try? await Task.sleep(for: .milliseconds(1100))
+                guard !Task.isCancelled else { return }
+                if feedbackItemID == itemID {
+                    withAnimation(.easeInOut(duration: 0.16)) {
+                        feedbackItemID = nil
+                    }
+                }
+            }
+        } else {
+            store.copyToPasteboard(item)
+            withAnimation(.easeInOut(duration: 0.16)) {
+                feedbackState = .copied
+                feedbackItemID = itemID
+            }
+
+            copyFeedbackTask = Task { @MainActor in
+                try? await Task.sleep(for: .milliseconds(1100))
+                guard !Task.isCancelled else { return }
+                if feedbackItemID == itemID {
+                    withAnimation(.easeInOut(duration: 0.16)) {
+                        feedbackItemID = nil
+                    }
                 }
             }
         }

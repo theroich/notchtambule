@@ -9,6 +9,7 @@ Cada vez que copias texto, enlaces, archivos, colores, JSON o imágenes:
 2. El catálogo central (`FeatureRegistry`) evalúa los plugins habilitados por orden de prioridad.
 3. Si un módulo activo está configurado con aviso automático (`.automaticPrompt`, como **YouTube Audio**), el notch se despliega al instante con su interfaz interactiva.
 4. Al acercar el cursor al notch aparece el panel con pestañas dinámicas (**Portapapeles** y paneles de actividad como **Descargas**), donde cada fila muestra las **acciones rápidas** (`quickActions`) de todos los módulos compatibles.
+5. **Pegado directo al hacer clic (Auto-Paste)**: al pulsar sobre cualquier elemento del historial, se escribe en el portapapeles, el notch se colapsa, el foco regresa a la aplicación activa previa y se sintetiza `⌘V` para pegarlo directamente en el campo donde estaba el cursor (o usa `⌥+Clic` para solo copiar).
 
 ```
 ┌────────────────────────────────── notch ──────────────────────────────────┐
@@ -88,6 +89,7 @@ Sources/NotchTubeAudio/
 ├── State/
 │   └── AppState.swift                   # orquestador entre historial, plugins y presentación del notch
 ├── Services/
+│   ├── AutoPasteService.swift           # restauración de foco, permiso de Accesibilidad y síntesis de ⌘V
 │   ├── ClipboardMonitor.swift           # monitor universal de NSPasteboard + exclusión confidencial
 │   ├── PasteboardReader.swift           # abstracción testeable del portapapeles de macOS
 │   ├── ClipboardHistoryStore.swift      # motor de historial en memoria + búsqueda, filtros y fijados
@@ -184,6 +186,15 @@ featureRegistry.register(UppercaseFeaturePlugin())
 | [ffmpeg](https://ffmpeg.org) | `brew install ffmpeg` *(opcional, requerido solo por el módulo YouTube Audio)* |
 
 La app no está sandboxeada (`com.apple.security.app-sandbox = false`) para que el módulo de YouTube Audio pueda lanzar `Process` con `yt-dlp`/`ffmpeg` y escribir en la carpeta de descargas seleccionada.
+
+### Pegado automático al hacer clic (Auto-Paste) y permiso de Accesibilidad
+
+Por defecto, la preferencia **«Pegar al hacer click en un elemento del historial»** (`settings.autoPasteOnSelect`) está activada en **Ajustes → Portapapeles y General (`⌘,`)**:
+
+- **Con permiso de Accesibilidad concedido**: al hacer clic en un elemento del historial en el notch (o en *Elementos recientes* del menú), la app recuerda qué aplicación tenía el foco antes de abrir el notch, copia el elemento sin duplicarlo en el historial (`ignoreNextChangeCount`), cierra el notch, restaura el foco en la app destino y sintetiza `⌘V` (`CGEvent` `kVK_ANSI_V` con `.maskCommand`).
+- **Modificador para solo copiar (`⌥+Clic`)**: mantén pulsada la tecla `⌥` (Opción) al hacer clic en una fila para copiar el elemento al portapapeles sin pegarlo automáticamente.
+- **Sin permiso de Accesibilidad o con `SecureEventInput` activo** (por ejemplo, cuando el cursor está en un campo de contraseña): la app degrada de forma segura al comportamiento clásico de **solo copiar** sin fallar en silencio, y en **Ajustes → Portapapeles y General** muestra el estado del permiso con un botón directo para abrir *Ajustes del Sistema → Privacidad y seguridad → Accesibilidad*.
+- **Desactivación manual**: puedes desactivar **«Pegar al hacer click en un elemento del historial»** en Ajustes en cualquier momento para volver al modo clásico de solo copiar al hacer clic.
 
 ---
 

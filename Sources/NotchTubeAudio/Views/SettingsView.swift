@@ -28,25 +28,31 @@ struct SettingsView: View {
     let settings: SettingsManager
     let featureRegistry: FeatureRegistry
     let historyStore: ClipboardHistoryStore?
+    let autoPasteService: AutoPasteService
 
     @State private var selectedTab: SettingsTab = .clipboardAndGeneral
     @State private var isConfirmingClearHistory = false
+    @State private var isAccessibilityTrusted = false
 
     init(
         settings: SettingsManager,
         featureRegistry: FeatureRegistry,
-        historyStore: ClipboardHistoryStore? = nil
+        historyStore: ClipboardHistoryStore? = nil,
+        autoPasteService: AutoPasteService = AutoPasteService()
     ) {
         self.settings = settings
         self.featureRegistry = featureRegistry
         self.historyStore = historyStore
+        self.autoPasteService = autoPasteService
+        self._isAccessibilityTrusted = State(initialValue: autoPasteService.canAutoPaste())
     }
 
     init(environment: AppEnvironment) {
         self.init(
             settings: environment.settings,
             featureRegistry: environment.featureRegistry,
-            historyStore: environment.historyStore
+            historyStore: environment.historyStore,
+            autoPasteService: environment.autoPasteService
         )
     }
 
@@ -83,6 +89,16 @@ struct SettingsView: View {
                 .tag(SettingsTab.plugins)
         }
         .frame(width: 600, height: 500)
+        .onAppear {
+            refreshAccessibilityStatus()
+        }
+        .onReceive(NotificationCenter.default.publisher(for: NSApplication.didBecomeActiveNotification)) { _ in
+            refreshAccessibilityStatus()
+        }
+    }
+
+    private func refreshAccessibilityStatus() {
+        isAccessibilityTrusted = autoPasteService.canAutoPaste()
     }
 
     // MARK: - Pestaña 1: Portapapeles y General
@@ -99,6 +115,45 @@ struct SettingsView: View {
                 Text("Se excluyen automáticamente las entradas marcadas como confidenciales o transitorias por aplicaciones como 1Password, Bitwarden o macOS Keychain.")
                     .font(.caption)
                     .foregroundStyle(.secondary)
+            }
+
+            Section("Pegado Automático (Auto-Paste)") {
+                Toggle("Pegar al hacer click en un elemento del historial", isOn: autoPasteBinding)
+
+                Text("Al pulsar sobre una fila del historial, el elemento se copia al portapapeles, el notch se cierra y se pega directamente (⌘V) en la aplicación y el campo donde estaba el cursor. Mantén pulsada la tecla ⌥ (Opción) al hacer clic para forzar «solo copiar».")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+
+                LabeledContent("Permiso de Accesibilidad") {
+                    HStack(spacing: 10) {
+                        Label(
+                            isAccessibilityTrusted ? "Concedido" : "Requerido para auto-pegar",
+                            systemImage: isAccessibilityTrusted ? "checkmark.shield.fill" : "exclamationmark.triangle.fill"
+                        )
+                        .font(.caption.weight(.medium))
+                        .foregroundStyle(isAccessibilityTrusted ? .green : .orange)
+
+                        if !isAccessibilityTrusted {
+                            Button("Abrir Accesibilidad…") {
+                                autoPasteService.openAccessibilitySettings(promptIfNeeded: true)
+                                refreshAccessibilityStatus()
+                            }
+                        }
+
+                        Button {
+                            refreshAccessibilityStatus()
+                        } label: {
+                            Image(systemName: "arrow.clockwise")
+                        }
+                        .help("Comprobar estado del permiso de Accesibilidad")
+                    }
+                }
+
+                if !isAccessibilityTrusted {
+                    Text("Sin permiso de Accesibilidad, hacer clic en un elemento seguirá copiándolo al portapapeles normalmente. Para activar el pegado directo, concede permiso en Ajustes del Sistema → Privacidad y seguridad → Accesibilidad.")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
             }
 
             Section("Historial del Portapapeles") {
@@ -203,6 +258,13 @@ struct SettingsView: View {
         Binding(
             get: { settings.ignoreConfidentialPasteboardTypes },
             set: { settings.ignoreConfidentialPasteboardTypes = $0 }
+        )
+    }
+
+    private var autoPasteBinding: Binding<Bool> {
+        Binding(
+            get: { settings.autoPasteOnSelect },
+            set: { settings.autoPasteOnSelect = $0 }
         )
     }
 

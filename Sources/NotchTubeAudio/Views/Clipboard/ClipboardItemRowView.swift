@@ -17,6 +17,8 @@ struct ClipboardItemRowView: View {
     let quickActions: [FeatureQuickAction]
     let matchedPlugins: [any ClipboardFeaturePlugin]
     let isCopiedFeedbackActive: Bool
+    var feedbackState: ClipboardItemClickFeedback = .copied
+    var isAutoPasteEnabled: Bool = false
     let onCopy: () -> Void
     let onTogglePin: () -> Void
     let onRemove: () -> Void
@@ -69,7 +71,7 @@ struct ClipboardItemRowView: View {
                 .contentShape(Rectangle())
             }
             .buttonStyle(.plain)
-            .help("Clic para copiar al portapapeles")
+            .help(rowHelpTooltip)
 
             trailingActions
         }
@@ -99,6 +101,13 @@ struct ClipboardItemRowView: View {
             return 0.11
         }
         return isHovered ? 0.085 : 0.05
+    }
+
+    var rowHelpTooltip: String {
+        if isAutoPasteEnabled {
+            return "Clic para pegar en la app activa (⌥+Clic para solo copiar)"
+        }
+        return "Clic para copiar al portapapeles"
     }
 
     // MARK: - Leading Icon / Thumbnail
@@ -247,11 +256,11 @@ struct ClipboardItemRowView: View {
     private var trailingActions: some View {
         if isCopiedFeedbackActive {
             HStack(spacing: 4) {
-                Image(systemName: "checkmark.circle.fill")
+                Image(systemName: feedbackState.badgeIcon)
                     .font(.system(size: 10.5, weight: .semibold))
                     .foregroundStyle(.green)
 
-                Text("Copiado")
+                Text(feedbackState.badgeTitle)
                     .font(.system(size: 10, weight: .semibold, design: .rounded))
                     .foregroundStyle(.green)
             }
