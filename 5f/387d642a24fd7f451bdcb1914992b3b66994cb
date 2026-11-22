@@ -1,0 +1,16 @@
+Sources/NotchTubeAudio/Views/Clipboard/ClipboardFilterPillsView.swift
+  h_c714c5d6d16f81 15-18,20-25,27-47,49-52,55-56,58-59,63
+Tests/NotchTubeAudioTests/ClipboardNotchUITests.swift
+  h_c714c5d6d16f81 442-521
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.6",
+  "base_commit_sha": "5f387d642a24fd7f451bdcb1914992b3b66994cb",
+  "prompts": {},
+  "humans": {
+    "h_c714c5d6d16f81": {
+      "author": "roicastrocasal <roicc@inditex.com>"
+    }
+  }
+}
