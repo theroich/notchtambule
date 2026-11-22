@@ -15,31 +15,29 @@ struct NotchHeaderTabsView: View {
     let onSelectTab: (NotchPanelTab) -> Void
 
     var body: some View {
-        ScrollView(.horizontal, showsIndicators: false) {
-            HStack(spacing: 6) {
-                tabPill(
-                    title: "Portapapeles",
-                    iconSystemName: "doc.on.clipboard",
-                    badgeCount: clipboardItemCount,
-                    isSelected: selectedTab == .clipboardHistory
-                ) {
-                    onSelectTab(.clipboardHistory)
-                }
+        HStack(spacing: 6) {
+            tabPill(
+                title: "Portapapeles",
+                iconSystemName: "doc.on.clipboard",
+                badgeCount: clipboardItemCount,
+                isSelected: selectedTab == .clipboardHistory
+            ) {
+                onSelectTab(.clipboardHistory)
+            }
 
-                ForEach(activityPlugins, id: \.id) { plugin in
-                    let tab = NotchPanelTab.pluginActivity(pluginID: plugin.id)
-                    tabPill(
-                        title: plugin.displayName,
-                        iconSystemName: plugin.iconSystemName,
-                        badgeCount: plugin.activeTasksCount,
-                        isSelected: selectedTab == tab
-                    ) {
-                        onSelectTab(tab)
-                    }
+            ForEach(activityPlugins, id: \.id) { plugin in
+                let tab = NotchPanelTab.pluginActivity(pluginID: plugin.id)
+                tabPill(
+                    title: plugin.activityPanelTitle,
+                    iconSystemName: plugin.iconSystemName,
+                    badgeCount: plugin.activeTasksCount,
+                    isSelected: selectedTab == tab
+                ) {
+                    onSelectTab(tab)
                 }
             }
-            .padding(2)
         }
+        .padding(2)
         .background(
             Capsule().fill(.white.opacity(0.06))
         )
@@ -76,7 +74,7 @@ struct NotchHeaderTabsView: View {
             .padding(.horizontal, 10)
             .padding(.vertical, 4.5)
             .background(
-                Capsule().fill(isSelected ? .white : .clear)
+                Capsule().fill(isSelected ? .white : .white.opacity(0.001))
             )
             .overlay {
                 Capsule()

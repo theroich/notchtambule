@@ -17,6 +17,7 @@ final class YouTubeAudioFeaturePlugin: ClipboardFeaturePlugin {
 
     let id: String = YouTubeAudioFeaturePlugin.pluginID
     let displayName: String = "YouTube Audio"
+    let activityPanelTitle: String = "Descargas"
     let summary: String = "Detecta enlaces de YouTube y permite descargar su audio en MP3 o WAV usando yt-dlp y ffmpeg."
     let iconSystemName: String = "waveform.badge.mic"
     let priority: FeaturePriority = .high

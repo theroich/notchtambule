@@ -61,6 +61,7 @@ protocol ClipboardFeaturePlugin: AnyObject, Identifiable {
 
     /// Pestaña o panel de actividad en segundo plano (ej. cola de descargas activas) si el plugin gestiona tareas asíncronas.
     var hasActivityPanel: Bool { get }
+    var activityPanelTitle: String { get }
     var activeTasksCount: Int { get }
     func makeActivityPanelView(context: FeatureActionContext) -> AnyView?
 
@@ -90,6 +91,7 @@ extension ClipboardFeaturePlugin {
     }
 
     var hasActivityPanel: Bool { false }
+    var activityPanelTitle: String { displayName }
     var activeTasksCount: Int { 0 }
 
     func makeActivityPanelView(context: FeatureActionContext) -> AnyView? {
