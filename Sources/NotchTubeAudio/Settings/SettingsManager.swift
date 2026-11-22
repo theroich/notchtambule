@@ -33,6 +33,8 @@ final class SettingsManager {
         static let maxClipboardHistoryItems = "notchtube.maxClipboardHistoryItems"
         static let persistClipboardHistory = "notchtube.persistClipboardHistory"
         static let promptDuration = "notchtube.promptDuration"
+        static let pluginEnabledStates = "notchtube.pluginEnabledStates"
+        static let pluginTriggerBehaviors = "notchtube.pluginTriggerBehaviors"
     }
 
     private let defaults: UserDefaults
@@ -114,6 +116,21 @@ final class SettingsManager {
         }
     }
 
+    /// Persistent map of `[pluginID: isEnabled]`. Plugins omitted from this dictionary default to `true`.
+    var pluginEnabledStates: [String: Bool] {
+        didSet {
+            defaults.set(pluginEnabledStates, forKey: Key.pluginEnabledStates)
+        }
+    }
+
+    /// Persistent map of `[pluginID: FeatureTriggerBehavior]` configured by the user.
+    var pluginTriggerBehaviors: [String: FeatureTriggerBehavior] {
+        didSet {
+            let rawDictionary = pluginTriggerBehaviors.mapValues(\.rawValue)
+            defaults.set(rawDictionary, forKey: Key.pluginTriggerBehaviors)
+        }
+    }
+
     var isYTDLPAvailable: Bool {
         BinaryLocator.isExecutable(ytDlpPath)
     }
@@ -159,6 +176,59 @@ final class SettingsManager {
 
         let storedDuration = (defaults.object(forKey: Key.promptDuration) as? Double) ?? Self.defaultPromptDuration
         self.promptAutoDismissSeconds = min(max(storedDuration, Self.minimumPromptDuration), Self.maximumPromptDuration)
+
+        if let storedEnabled = defaults.dictionary(forKey: Key.pluginEnabledStates) as? [String: Bool] {
+            self.pluginEnabledStates = storedEnabled
+        } else if let rawDict = defaults.dictionary(forKey: Key.pluginEnabledStates) {
+            var parsed: [String: Bool] = [:]
+            for (key, value) in rawDict {
+                if let boolValue = value as? Bool {
+                    parsed[key] = boolValue
+                } else if let numberValue = value as? NSNumber {
+                    parsed[key] = numberValue.boolValue
+                }
+            }
+            self.pluginEnabledStates = parsed
+        } else {
+            self.pluginEnabledStates = [:]
+        }
+
+        if let rawBehaviors = defaults.dictionary(forKey: Key.pluginTriggerBehaviors) as? [String: String] {
+            var parsedBehaviors: [String: FeatureTriggerBehavior] = [:]
+            for (pluginID, rawValue) in rawBehaviors {
+                if let behavior = FeatureTriggerBehavior(rawValue: rawValue) {
+                    parsedBehaviors[pluginID] = behavior
+                }
+            }
+            self.pluginTriggerBehaviors = parsedBehaviors
+        } else {
+            self.pluginTriggerBehaviors = [:]
+        }
+    }
+
+    // MARK: - Plugin Preferences
+
+    /// Returns whether the plugin with `pluginID` is enabled (`true` by default if never customized).
+    func isPluginEnabled(_ pluginID: String) -> Bool {
+        pluginEnabledStates[pluginID] ?? true
+    }
+
+    /// Persists the enabled/disabled state for `pluginID`.
+    func setPluginEnabled(_ pluginID: String, _ enabled: Bool) {
+        pluginEnabledStates[pluginID] = enabled
+    }
+
+    /// Returns the stored trigger behavior for `pluginID`, or `defaultBehavior` when unset.
+    func triggerBehavior(
+        for pluginID: String,
+        defaultBehavior: FeatureTriggerBehavior = .historyActionOnly
+    ) -> FeatureTriggerBehavior {
+        pluginTriggerBehaviors[pluginID] ?? defaultBehavior
+    }
+
+    /// Persists the user-selected trigger behavior for `pluginID`.
+    func setTriggerBehavior(_ behavior: FeatureTriggerBehavior, for pluginID: String) {
+        pluginTriggerBehaviors[pluginID] = behavior
     }
 
     /// Updates both binary paths to the first executable found on this Mac.

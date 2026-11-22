@@ -68,4 +68,30 @@ struct SettingsManagerTests {
         #expect(!BinaryLocator.isExecutable("/definitely/not/here"))
         #expect(!BinaryLocator.isExecutable(""))
     }
+
+    @Test func persistsPluginEnabledStatesAndTriggerBehaviors() throws {
+        let suiteName = "notchtube.settings.plugins.\(UUID().uuidString)"
+        let defaults = try #require(UserDefaults(suiteName: suiteName))
+        defaults.removePersistentDomain(forName: suiteName)
+        defer { defaults.removePersistentDomain(forName: suiteName) }
+
+        let settings = SettingsManager(defaults: defaults)
+        let youtubeID = "com.notchclip.plugin.youtube-audio"
+        let cleanerID = "com.notchclip.plugin.url-cleaner"
+
+        #expect(settings.isPluginEnabled(youtubeID) == true)
+        #expect(settings.triggerBehavior(for: youtubeID, defaultBehavior: .automaticPrompt) == .automaticPrompt)
+        #expect(settings.triggerBehavior(for: cleanerID, defaultBehavior: .historyActionOnly) == .historyActionOnly)
+
+        settings.setPluginEnabled(youtubeID, false)
+        settings.setPluginEnabled(cleanerID, true)
+        settings.setTriggerBehavior(.historyActionOnly, for: youtubeID)
+        settings.setTriggerBehavior(.automaticPrompt, for: cleanerID)
+
+        let reloaded = SettingsManager(defaults: defaults)
+        #expect(reloaded.isPluginEnabled(youtubeID) == false)
+        #expect(reloaded.isPluginEnabled(cleanerID) == true)
+        #expect(reloaded.triggerBehavior(for: youtubeID, defaultBehavior: .automaticPrompt) == .historyActionOnly)
+        #expect(reloaded.triggerBehavior(for: cleanerID, defaultBehavior: .historyActionOnly) == .automaticPrompt)
+    }
 }
