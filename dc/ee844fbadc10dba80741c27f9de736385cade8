@@ -1,0 +1,26 @@
+Sources/NotchTubeAudio/Features/ClipboardFeaturePlugin.swift
+  h_c714c5d6d16f81 1-99
+Sources/NotchTubeAudio/Features/FeatureModels.swift
+  h_c714c5d6d16f81 1-112
+Sources/NotchTubeAudio/Features/FeatureRegistry.swift
+  h_c714c5d6d16f81 1-193
+Sources/NotchTubeAudio/Settings/SettingsManager.swift
+  h_c714c5d6d16f81 36-37,119-133,179-231
+Sources/NotchTubeAudio/Utilities/Logging.swift
+  h_c714c5d6d16f81 19
+Tests/NotchTubeAudioTests/FeatureRegistryTests.swift
+  h_c714c5d6d16f81 1-407
+Tests/NotchTubeAudioTests/SettingsManagerTests.swift
+  h_c714c5d6d16f81 71-96
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.6",
+  "base_commit_sha": "dcee844fbadc10dba80741c27f9de736385cade8",
+  "prompts": {},
+  "humans": {
+    "h_c714c5d6d16f81": {
+      "author": "roicastrocasal <roicc@inditex.com>"
+    }
+  }
+}
