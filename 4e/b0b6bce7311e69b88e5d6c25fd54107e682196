@@ -1,0 +1,26 @@
+Sources/NotchTubeAudio/Features/ClipboardFeaturePlugin.swift
+  h_c714c5d6d16f81 64,94
+Sources/NotchTubeAudio/Features/YouTubeAudio/YouTubeAudioFeaturePlugin.swift
+  h_c714c5d6d16f81 20
+Sources/NotchTubeAudio/Views/Clipboard/ClipboardFilterPillsView.swift
+  h_c714c5d6d16f81 15-17,19-24,26-27,29-43,45-47,50
+Sources/NotchTubeAudio/Views/NotchHeaderTabsView.swift
+  h_c714c5d6d16f81 18-29,31-34,36,40,77
+Sources/NotchTubeAudio/Views/NotchRootView.swift
+  h_c714c5d6d16f81 90,95,104-106,108-115,118-119,121
+Tests/NotchTubeAudioTests/AppStateOrchestrationTests.swift
+  h_c714c5d6d16f81 290-300
+Tests/NotchTubeAudioTests/ClipboardNotchUITests.swift
+  h_c714c5d6d16f81 292,298,301-441
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.6",
+  "base_commit_sha": "4eb0b6bce7311e69b88e5d6c25fd54107e682196",
+  "prompts": {},
+  "humans": {
+    "h_c714c5d6d16f81": {
+      "author": "roicastrocasal <roicc@inditex.com>"
+    }
+  }
+}
