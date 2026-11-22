@@ -107,10 +107,10 @@ final class ClipboardStorage {
                 return directItems
             }
 
-            Log.clipboard.error("No se pudo decodificar history.json")
+            Log.clipboard.error("Could not decode history.json")
             return []
         } catch {
-            Log.clipboard.error("Error leyendo el historial del portapapeles en disco: \(error.localizedDescription, privacy: .public)")
+            Log.clipboard.error("Error reading clipboard history from disk: \(error.localizedDescription, privacy: .public)")
             return []
         }
     }
@@ -324,7 +324,7 @@ final class ClipboardStorage {
                 case .image(let imagePayload):
                     let binaryData = normalizedPNGData(from: imagePayload.tiffOrPngData)
                     guard binaryData.count <= maxImageBytes else {
-                        Log.clipboard.warning("Imagen omitida de persistencia en disco por exceder el límite (\(binaryData.count) bytes)")
+                        Log.clipboard.warning("Image omitted from disk persistence because it exceeds limit (\(binaryData.count) bytes)")
                         continue
                     }
 
@@ -370,7 +370,7 @@ final class ClipboardStorage {
                 }
             }
         } catch {
-            Log.clipboard.error("Error guardando el historial del portapapeles en disco: \(error.localizedDescription, privacy: .public)")
+            Log.clipboard.error("Error saving clipboard history to disk: \(error.localizedDescription, privacy: .public)")
         }
     }
 

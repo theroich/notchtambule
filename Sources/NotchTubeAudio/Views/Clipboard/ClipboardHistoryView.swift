@@ -82,7 +82,7 @@ struct ClipboardHistoryView: View {
                     .font(.system(size: 10.5, weight: .semibold))
                     .foregroundStyle(.white.opacity(0.55))
 
-                TextField("Buscar en el portapapeles…", text: $store.searchQuery)
+                TextField(L10n.string("clipboard.search.placeholder"), text: $store.searchQuery)
                     .textFieldStyle(.plain)
                     .font(.system(size: 11, weight: .regular))
                     .foregroundStyle(.white)
@@ -96,8 +96,8 @@ struct ClipboardHistoryView: View {
                             .foregroundStyle(.white.opacity(0.55))
                     }
                     .buttonStyle(.plain)
-                    .help("Limpiar búsqueda")
-                    .accessibilityLabel("Limpiar búsqueda")
+                    .help(L10n.string("clipboard.search.clear.help"))
+                    .accessibilityLabel(L10n.string("clipboard.search.clear.help"))
                 }
             }
             .padding(.horizontal, 9)
@@ -118,7 +118,7 @@ struct ClipboardHistoryView: View {
                     .padding(.horizontal, 5)
                     .frame(minWidth: 18, minHeight: 17)
                     .background(Capsule().fill(.white.opacity(0.85)))
-                    .help("Elementos mostrados")
+                    .help(L10n.string("clipboard.search.shown_count.help"))
             }
 
             if hasUnpinnedItems {
@@ -136,8 +136,8 @@ struct ClipboardHistoryView: View {
                         .contentShape(Rectangle())
                 }
                 .buttonStyle(.plain)
-                .help("Vaciar elementos no fijados")
-                .accessibilityLabel("Vaciar elementos no fijados")
+                .help(L10n.string("clipboard.clear_unpinned.help"))
+                .accessibilityLabel(L10n.string("clipboard.clear_unpinned.help"))
             }
         }
     }
@@ -181,14 +181,14 @@ struct ClipboardHistoryView: View {
                 .foregroundStyle(.white.opacity(0.25))
 
             VStack(alignment: .leading, spacing: 2) {
-                Text(isFiltering ? "Sin resultados para este filtro" : "Historial del portapapeles vacío")
+                Text(isFiltering ? L10n.string("clipboard.empty.filtered.title") : L10n.string("clipboard.empty.title"))
                     .font(.system(size: 11.5, weight: .semibold))
                     .foregroundStyle(.white.opacity(0.82))
 
                 Text(
                     isFiltering
-                        ? "Prueba con otro término de búsqueda o cambia la categoría seleccionada."
-                        : "Cualquier texto, enlace, archivo o imagen que copies aparecerá aquí automáticamente."
+                        ? L10n.string("clipboard.empty.filtered.subtitle")
+                        : L10n.string("clipboard.empty.subtitle")
                 )
                 .font(.system(size: 9.5))
                 .foregroundStyle(.white.opacity(0.48))
@@ -202,7 +202,7 @@ struct ClipboardHistoryView: View {
                     store.searchQuery = ""
                     store.selectedFilter = .all
                 } label: {
-                    Text("Restablecer")
+                    Text(L10n.string("clipboard.empty.reset"))
                         .font(.system(size: 10, weight: .semibold))
                         .foregroundStyle(.white.opacity(0.85))
                         .padding(.horizontal, 8)

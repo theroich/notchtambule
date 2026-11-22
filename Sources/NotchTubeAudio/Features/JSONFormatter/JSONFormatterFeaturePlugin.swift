@@ -13,8 +13,8 @@ final class JSONFormatterFeaturePlugin: ClipboardFeaturePlugin {
     static let pluginID = "com.notchclip.plugin.json-formatter"
 
     let id: String = JSONFormatterFeaturePlugin.pluginID
-    let displayName: String = "Formateador JSON"
-    let summary: String = "Detecta documentos JSON válidos en el portapapeles y permite formatearlos (Prettify) o compactarlos (Minify)."
+    var displayName: String { L10n.string("plugin.json_formatter.name") }
+    var summary: String { L10n.string("plugin.json_formatter.summary") }
     let iconSystemName: String = "curlybraces"
     let priority: FeaturePriority = .normal
     let defaultTriggerBehavior: FeatureTriggerBehavior = .historyActionOnly
@@ -40,22 +40,22 @@ final class JSONFormatterFeaturePlugin: ClipboardFeaturePlugin {
             FeatureQuickAction(
                 id: "\(id).prettify.\(item.id.uuidString)",
                 pluginID: id,
-                title: "Prettify JSON",
+                title: L10n.string("plugin.json_formatter.action.prettify"),
                 iconSystemName: "curlybraces"
             ) {
                 guard let formatted = Self.prettifyJSON(rawText) else { return }
                 context.writeToClipboard(.text(formatted))
-                context.notifyUser(message: "JSON formateado copiado", icon: "curlybraces")
+                context.notifyUser(message: L10n.string("plugin.json_formatter.notify.prettified"), icon: "curlybraces")
             },
             FeatureQuickAction(
                 id: "\(id).minify.\(item.id.uuidString)",
                 pluginID: id,
-                title: "Minify JSON",
+                title: L10n.string("plugin.json_formatter.action.minify"),
                 iconSystemName: "arrow.down.right.and.arrow.up.left"
             ) {
                 guard let minified = Self.minifyJSON(rawText) else { return }
                 context.writeToClipboard(.text(minified))
-                context.notifyUser(message: "JSON minificado copiado", icon: "arrow.down.right.and.arrow.up.left")
+                context.notifyUser(message: L10n.string("plugin.json_formatter.notify.minified"), icon: "arrow.down.right.and.arrow.up.left")
             }
         ]
     }

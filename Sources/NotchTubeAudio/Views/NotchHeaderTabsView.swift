@@ -17,7 +17,7 @@ struct NotchHeaderTabsView: View {
     var body: some View {
         HStack(spacing: 6) {
             tabPill(
-                title: "Portapapeles",
+                title: L10n.string("notch.tab.clipboard"),
                 iconSystemName: "doc.on.clipboard",
                 badgeCount: clipboardItemCount,
                 isSelected: selectedTab == .clipboardHistory
@@ -58,6 +58,7 @@ struct NotchHeaderTabsView: View {
 
                 Text(title)
                     .font(.system(size: 10.5, weight: .semibold))
+                    .lineLimit(1)
 
                 if badgeCount > 0 {
                     Text("\(badgeCount)")
@@ -86,7 +87,11 @@ struct NotchHeaderTabsView: View {
             .contentShape(Capsule())
         }
         .buttonStyle(.plain)
-        .accessibilityLabel(badgeCount > 0 ? "\(title) (\(badgeCount))" : title)
+        .accessibilityLabel(
+            badgeCount > 0
+                ? L10n.format("notch.tab.accessibility.with_badge", title, Int64(badgeCount))
+                : title
+        )
         .accessibilityAddTraits(isSelected ? [.isSelected] : [])
     }
 }

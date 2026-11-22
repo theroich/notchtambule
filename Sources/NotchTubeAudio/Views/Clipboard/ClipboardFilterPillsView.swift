@@ -48,7 +48,7 @@ struct ClipboardFilterPillsView: View {
                     }
                     .buttonStyle(.plain)
                     .fixedSize(horizontal: true, vertical: false)
-                    .accessibilityLabel("Filtro \(filter.displayTitle)")
+                    .accessibilityLabel(L10n.format("filter.accessibility.label", filter.displayTitle))
                     .accessibilityAddTraits(isSelected ? [.isSelected] : [])
                 }
             }
@@ -63,7 +63,7 @@ struct ClipboardFilterPillsView: View {
     func pillTitle(for filter: ClipboardContentFilter) -> String {
         switch filter {
         case .pinned:
-            return "Fijados 📌"
+            return L10n.string("filter.pinned.pill")
         default:
             return filter.displayTitle
         }

@@ -10,6 +10,7 @@ import PackageDescription
 
 let package = Package(
     name: "NotchTubeAudio",
+    defaultLocalization: "es",
     platforms: [
         .macOS(.v14)
     ],
@@ -32,6 +33,9 @@ let package = Package(
                 .product(name: "DynamicNotchKit", package: "DynamicNotchKit")
             ],
             path: "Sources/NotchTubeAudio",
+            resources: [
+                .process("Resources")
+            ],
             swiftSettings: [
                 .swiftLanguageMode(.v6)
             ]

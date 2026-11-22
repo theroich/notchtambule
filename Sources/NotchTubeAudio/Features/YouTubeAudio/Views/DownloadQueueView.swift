@@ -54,7 +54,7 @@ struct DownloadQueueView: View {
                 .font(.system(size: 11, weight: .semibold))
                 .foregroundStyle(.white.opacity(0.70))
 
-            Text("Descargas")
+            Text(L10n.string("notch.tab.downloads"))
                 .font(.system(size: 11.5, weight: .semibold))
                 .foregroundStyle(.white)
 
@@ -64,7 +64,9 @@ struct DownloadQueueView: View {
                     .foregroundStyle(.black)
                     .frame(minWidth: 15, minHeight: 15)
                     .background(Capsule().fill(.white.opacity(0.85)))
-                    .accessibilityLabel("\(manager.activeCount) descargas activas")
+                    .accessibilityLabel(
+                        L10n.format("downloads.queue.active_count.accessibility", Int64(manager.activeCount))
+                    )
             }
 
             Spacer(minLength: 0)
@@ -80,8 +82,8 @@ struct DownloadQueueView: View {
                         .contentShape(Rectangle())
                 }
                 .buttonStyle(.plain)
-                .help("Limpiar descargas finalizadas")
-                .accessibilityLabel("Limpiar descargas finalizadas")
+                .help(L10n.string("downloads.queue.clear_finished.help"))
+                .accessibilityLabel(L10n.string("downloads.queue.clear_finished.help"))
             }
         }
     }
@@ -93,10 +95,10 @@ struct DownloadQueueView: View {
                 .foregroundStyle(.white.opacity(0.22))
 
             VStack(alignment: .leading, spacing: 2) {
-                Text("Sin descargas")
+                Text(L10n.string("downloads.queue.empty.title"))
                     .font(.system(size: 11.5, weight: .semibold))
                     .foregroundStyle(.white.opacity(0.80))
-                Text("Copia un enlace de YouTube para empezar.")
+                Text(L10n.string("downloads.queue.empty.subtitle"))
                     .font(.system(size: 9.5))
                     .foregroundStyle(.white.opacity(0.45))
             }

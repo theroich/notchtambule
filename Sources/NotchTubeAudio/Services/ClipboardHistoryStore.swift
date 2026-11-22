@@ -21,17 +21,17 @@ enum ClipboardContentFilter: String, CaseIterable, Identifiable, Sendable, Codab
     var displayTitle: String {
         switch self {
         case .all:
-            return "Todo"
+            return L10n.string("filter.all")
         case .text:
-            return "Texto"
+            return L10n.string("filter.text")
         case .links:
-            return "Enlaces"
+            return L10n.string("filter.links")
         case .images:
-            return "Imágenes"
+            return L10n.string("filter.images")
         case .files:
-            return "Archivos"
+            return L10n.string("filter.files")
         case .pinned:
-            return "Fijados"
+            return L10n.string("filter.pinned")
         }
     }
 
@@ -316,8 +316,8 @@ final class ClipboardHistoryStore {
             }
 
         case .image:
-            return "imagen".localizedCaseInsensitiveContains(query)
-                || "image".localizedCaseInsensitiveContains(query)
+            return L10n.string("clipboard.item.image", languageCode: "es").localizedCaseInsensitiveContains(query)
+                || L10n.string("clipboard.item.image", languageCode: "en").localizedCaseInsensitiveContains(query)
         }
     }
 }

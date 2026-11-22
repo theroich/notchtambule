@@ -67,7 +67,7 @@ struct ClipboardItem: Identifiable, Equatable, Sendable, Codable {
                 .joined(separator: " ")
 
             guard !collapsed.isEmpty else {
-                return "Texto vacío"
+                return L10n.string("clipboard.item.empty_text")
             }
             if collapsed.count <= Self.maxPreviewLength {
                 return collapsed
@@ -88,20 +88,20 @@ struct ClipboardItem: Identifiable, Equatable, Sendable, Codable {
 
         case .files(let urls):
             guard let first = urls.first else {
-                return "Archivos"
+                return L10n.string("filter.files")
             }
             if urls.count == 1 {
                 return first.lastPathComponent
             }
-            return "\(first.lastPathComponent) y \(urls.count - 1) más"
+            return L10n.format("clipboard.item.files_more", first.lastPathComponent, Int64(urls.count - 1))
 
         case .image(let image):
             let w = Int(image.width.rounded())
             let h = Int(image.height.rounded())
             if w > 0, h > 0 {
-                return "Imagen (\(w)×\(h))"
+                return L10n.format("clipboard.item.image_dimensions", Int64(w), Int64(h))
             }
-            return "Imagen"
+            return L10n.string("clipboard.item.image")
         }
     }
 
@@ -117,7 +117,7 @@ struct ClipboardItem: Identifiable, Equatable, Sendable, Codable {
 
         switch payload {
         case .text(let text):
-            parts.append("\(text.count) caracteres")
+            parts.append(L10n.format("clipboard.item.characters_count", Int64(text.count)))
         case .url(let url, _):
             if let host = url.host, !host.isEmpty {
                 parts.append(host)
@@ -126,11 +126,10 @@ struct ClipboardItem: Identifiable, Equatable, Sendable, Codable {
             if urls.count == 1, let first = urls.first {
                 parts.append(first.deletingLastPathComponent().lastPathComponent)
             } else if urls.count > 1 {
-                parts.append("\(urls.count) archivos")
+                parts.append(L10n.format("clipboard.item.files_count", Int64(urls.count)))
             }
         case .image(let image):
-            let kb = max(1, image.tiffOrPngData.count / 1024)
-            parts.append("\(kb) KB")
+            parts.append(L10n.formatByteCount(image.tiffOrPngData.count))
         }
 
         return parts.isEmpty ? nil : parts.joined(separator: " · ")

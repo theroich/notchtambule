@@ -88,9 +88,9 @@ final class AppEnvironment {
         notchController.start()
         clipboardMonitor.start()
 
-        Log.app.info("NotchTubeAudio iniciado")
+        Log.app.info("NotchTubeAudio started")
         if !settings.areBinariesAvailable {
-            Log.app.warning("yt-dlp o ffmpeg no están disponibles en las rutas configuradas")
+            Log.app.warning("yt-dlp or ffmpeg are not available at the configured paths")
         }
     }
 
@@ -103,7 +103,7 @@ final class AppEnvironment {
         appState.shutdown()
         downloadManager.terminateAllProcesses()
 
-        Log.app.info("NotchTubeAudio finalizado")
+        Log.app.info("NotchTubeAudio stopped")
     }
 
     // MARK: - Actions shared with the menu bar

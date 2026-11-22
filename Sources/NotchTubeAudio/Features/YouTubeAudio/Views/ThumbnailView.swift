@@ -49,7 +49,7 @@ struct ThumbnailView: View {
             RoundedRectangle(cornerRadius: 9, style: .continuous)
                 .strokeBorder(.white.opacity(0.10), lineWidth: 1)
         }
-        .accessibilityLabel("Miniatura del vídeo")
+        .accessibilityLabel(L10n.string("youtube.thumbnail.accessibility"))
     }
 
     private var placeholder: some View {
