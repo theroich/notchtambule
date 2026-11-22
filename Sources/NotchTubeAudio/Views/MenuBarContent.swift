@@ -68,7 +68,10 @@ struct MenuBarContent: View {
             } else {
                 ForEach(recentItems) { item in
                     Button {
-                        historyStore.copyToPasteboard(item)
+                        Task { @MainActor in
+                            let forceCopyOnly = NSEvent.modifierFlags.contains(.option)
+                            await appState.autoPaste(item: item, forceCopyOnly: forceCopyOnly)
+                        }
                     } label: {
                         Label(
                             Self.menuItemTitle(for: item),

@@ -128,7 +128,11 @@ struct NotchRootView: View {
             store: appState.historyStore,
             featureRegistry: appState.featureRegistry,
             actionContext: appState.actionContext,
-            activeNotification: appState.activeNotification
+            activeNotification: appState.activeNotification,
+            isAutoPasteEnabled: appState.settings.autoPasteOnSelect && appState.autoPasteService.canAutoPaste(),
+            onSelectItem: { item, forceCopyOnly in
+                await appState.autoPaste(item: item, forceCopyOnly: forceCopyOnly)
+            }
         )
     }
 }

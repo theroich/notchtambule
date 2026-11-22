@@ -20,6 +20,7 @@ final class AppEnvironment {
     let colorConverterPlugin: ColorConverterFeaturePlugin
     let historyStore: ClipboardHistoryStore
     let featureRegistry: FeatureRegistry
+    let autoPasteService: AutoPasteService
     let appState: AppState
     let clipboardMonitor: ClipboardMonitor
     let notchController: NotchController
@@ -50,10 +51,12 @@ final class AppEnvironment {
                 colorConverterPlugin
             ]
         )
+        let autoPasteService = AutoPasteService()
         let appState = AppState(
             settings: settings,
             historyStore: historyStore,
-            featureRegistry: featureRegistry
+            featureRegistry: featureRegistry,
+            autoPasteService: autoPasteService
         )
         let notch = NotchController(appState: appState, settings: settings)
 
@@ -65,6 +68,7 @@ final class AppEnvironment {
         self.colorConverterPlugin = colorConverterPlugin
         self.historyStore = historyStore
         self.featureRegistry = featureRegistry
+        self.autoPasteService = autoPasteService
         self.appState = appState
         self.clipboardMonitor = clipboard
         self.notchController = notch

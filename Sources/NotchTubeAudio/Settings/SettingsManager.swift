@@ -32,6 +32,7 @@ final class SettingsManager {
         static let ignoreConfidentialTypes = "notchtube.ignoreConfidentialTypes"
         static let maxClipboardHistoryItems = "notchtube.maxClipboardHistoryItems"
         static let persistClipboardHistory = "notchtube.persistClipboardHistory"
+        static let autoPasteOnSelect = "notchtube.autoPasteOnSelect"
         static let promptDuration = "notchtube.promptDuration"
         static let pluginEnabledStates = "notchtube.pluginEnabledStates"
         static let pluginTriggerBehaviors = "notchtube.pluginTriggerBehaviors"
@@ -106,6 +107,14 @@ final class SettingsManager {
         set { persistClipboardHistory = newValue }
     }
 
+    /// Whether clicking an item in the clipboard history automatically pastes it (`⌘V`)
+    /// into the previously active application when Accessibility permission is granted.
+    var autoPasteOnSelect: Bool {
+        didSet {
+            defaults.set(autoPasteOnSelect, forKey: Key.autoPasteOnSelect)
+        }
+    }
+
     var promptAutoDismissSeconds: Double {
         didSet {
             let clamped = min(max(promptAutoDismissSeconds, Self.minimumPromptDuration), Self.maximumPromptDuration)
@@ -173,6 +182,7 @@ final class SettingsManager {
         )
 
         self.persistClipboardHistory = (defaults.object(forKey: Key.persistClipboardHistory) as? Bool) ?? true
+        self.autoPasteOnSelect = (defaults.object(forKey: Key.autoPasteOnSelect) as? Bool) ?? true
 
         let storedDuration = (defaults.object(forKey: Key.promptDuration) as? Double) ?? Self.defaultPromptDuration
         self.promptAutoDismissSeconds = min(max(storedDuration, Self.minimumPromptDuration), Self.maximumPromptDuration)

@@ -35,10 +35,12 @@ final class AppState {
     let settings: SettingsManager
     let historyStore: ClipboardHistoryStore
     let featureRegistry: FeatureRegistry
+    let autoPasteService: AutoPasteService
 
     private(set) var notchMode: NotchMode = .idle
     var activeTab: NotchPanelTab = .clipboardHistory
     private(set) var activeNotification: FeatureUserNotification?
+    private(set) var lastPasteResult: PasteResult?
 
     @ObservationIgnored weak var presenter: (any NotchPresenting)?
 
@@ -67,11 +69,13 @@ final class AppState {
     init(
         settings: SettingsManager,
         historyStore: ClipboardHistoryStore,
-        featureRegistry: FeatureRegistry
+        featureRegistry: FeatureRegistry,
+        autoPasteService: AutoPasteService = AutoPasteService()
     ) {
         self.settings = settings
         self.historyStore = historyStore
         self.featureRegistry = featureRegistry
+        self.autoPasteService = autoPasteService
     }
 
     // MARK: - Clipboard flow
@@ -94,6 +98,7 @@ final class AppState {
         let storedItem = historyStore.items.first(where: { $0.contentHash == annotatedItem.contentHash }) ?? annotatedItem
 
         if let promptPlugin = featureRegistry.primaryPromptPlugin(for: storedItem, context: actionContext) {
+            autoPasteService.rememberFrontmostApp()
             notchMode = .promptingFeature(pluginID: promptPlugin.id, item: storedItem)
             presenter?.presentPrompt()
         }
@@ -113,6 +118,7 @@ final class AppState {
               plugin.makePromptView(for: item, context: actionContext, onComplete: {}, onDismiss: {}) != nil else {
             return
         }
+        autoPasteService.rememberFrontmostApp()
         notchMode = .promptingFeature(pluginID: pluginID, item: item)
         presenter?.presentPrompt()
     }
@@ -155,6 +161,9 @@ final class AppState {
 
     /// Selects a tab and presents the notch panel.
     func selectTab(_ tab: NotchPanelTab, autoHideAfter seconds: TimeInterval? = nil) {
+        if notchMode == .idle {
+            autoPasteService.rememberFrontmostApp()
+        }
         let resolvedTab = validatedTab(tab)
         activeTab = resolvedTab
         notchMode = .showingPanel(tab: resolvedTab)
@@ -163,6 +172,9 @@ final class AppState {
 
     /// Transitions to a plugin's activity panel tab in the notch.
     func switchToPluginActivity(pluginID: String, autoHideAfter seconds: TimeInterval? = 4) {
+        if notchMode == .idle {
+            autoPasteService.rememberFrontmostApp()
+        }
         let tab: NotchPanelTab = .pluginActivity(pluginID: pluginID)
         activeTab = tab
         notchMode = .showingPanel(tab: tab)
@@ -174,6 +186,7 @@ final class AppState {
         guard !notchMode.isPrompting else { return }
         guard !notchMode.isShowingPanel else { return }
 
+        autoPasteService.rememberFrontmostApp()
         let tab = validatedTab(activeTab)
         activeTab = tab
         notchMode = .showingPanel(tab: tab)
@@ -189,6 +202,9 @@ final class AppState {
     func showPanelFromMenu(tab: NotchPanelTab? = nil, autoHideAfter seconds: TimeInterval? = 6) {
         guard !notchMode.isPrompting else { return }
 
+        if notchMode == .idle {
+            autoPasteService.rememberFrontmostApp()
+        }
         let resolvedTab = validatedTab(tab ?? activeTab)
         activeTab = resolvedTab
         notchMode = .showingPanel(tab: resolvedTab)
@@ -216,6 +232,58 @@ final class AppState {
         guard notchMode != .idle else { return }
         notchMode = .idle
         presenter?.hide()
+    }
+
+    // MARK: - Auto-Paste
+
+    /// Writes `item` to the system pasteboard (`ignoreNextChangeCount` armed so no duplicate
+    /// entry is recorded) and, when `settings.autoPasteOnSelect` is enabled and `forceCopyOnly`
+    /// is `false`, hides the notch, restores focus to the remembered frontmost application,
+    /// and synthesizes `⌘V`.
+    ///
+    /// - Parameters:
+    ///   - item: The clipboard history entry selected by the user.
+    ///   - forceCopyOnly: Pass `true` (e.g. when `⌥ Option` is held) to force copy-only behavior.
+    /// - Returns: `.pasted` when `⌘V` was sent, or `.copiedOnly(reason:)` when degraded to copy-only.
+    @discardableResult
+    func autoPaste(item: ClipboardItem, forceCopyOnly: Bool = false) async -> PasteResult {
+        historyStore.copyToPasteboard(item)
+
+        if forceCopyOnly {
+            let result: PasteResult = .copiedOnly(reason: .forcedCopyModifier)
+            lastPasteResult = result
+            return result
+        }
+
+        guard settings.autoPasteOnSelect else {
+            let result: PasteResult = .copiedOnly(reason: .disabledInSettings)
+            lastPasteResult = result
+            return result
+        }
+
+        guard autoPasteService.canAutoPaste() else {
+            let reason = AutoPasteSkipReason.accessibilityPermissionMissing
+            if let message = reason.userFacingMessage {
+                notifyUser(message: message, icon: "hand.raised.fill")
+            }
+            let result: PasteResult = .copiedOnly(reason: reason)
+            lastPasteResult = result
+            return result
+        }
+
+        // Collapse the notch first so any auto-hide timer is cancelled and focus returns cleanly
+        // to the target application before posting ⌘V.
+        hideNotch()
+
+        let result = await autoPasteService.paste()
+        lastPasteResult = result
+
+        if case .copiedOnly(let reason) = result,
+           let message = reason.userFacingMessage {
+            notifyUser(message: message, icon: "info.circle.fill")
+        }
+
+        return result
     }
 
     // MARK: - Context helpers
