@@ -97,11 +97,55 @@ final class AppEnvironment {
     /// Forces capture of the current pasteboard item and routes it through `AppState`,
     /// even if automatic monitoring is disabled.
     func detectClipboardNow() {
-        guard let item = clipboardMonitor.captureCurrentPasteboard(force: true) else {
+        runActionOnCurrentClipboard()
+    }
+
+    /// Evaluates the current clipboard (or the most recent history entry) against
+    /// `FeatureRegistry` and triggers the highest-priority compatible plugin's prompt
+    /// or quick action in the notch.
+    func runActionOnCurrentClipboard() {
+        let candidateItem: ClipboardItem
+        if let captured = clipboardMonitor.captureCurrentPasteboard(force: true) {
+            let matchedPlugins = featureRegistry.matchingPlugins(for: captured)
+            var annotated = captured
+            annotated.detectedFeatureIDs = matchedPlugins.map(\.id)
+            historyStore.record(annotated)
+            candidateItem = historyStore.items.first(where: { $0.contentHash == annotated.contentHash }) ?? annotated
+        } else if let latest = historyStore.items.first {
+            candidateItem = latest
+        } else {
             NSSound.beep()
             return
         }
-        appState.handleCapturedItem(item)
+
+        let matching = featureRegistry.matchingPlugins(for: candidateItem)
+        for plugin in matching {
+            if plugin.makePromptView(
+                for: candidateItem,
+                context: appState.actionContext,
+                onComplete: {},
+                onDismiss: {}
+            ) != nil {
+                appState.presentPluginPrompt(pluginID: plugin.id, for: candidateItem)
+                return
+            }
+        }
+
+        if let firstQuickAction = featureRegistry.quickActions(for: candidateItem, context: appState.actionContext).first {
+            firstQuickAction.handler()
+            return
+        }
+
+        appState.showPanelFromMenu(tab: .clipboardHistory)
+    }
+
+    /// Símbolo SF Symbol para `MenuBarExtra`, cambiando dinámicamente cuando hay tareas
+    /// activas en algún módulo habilitado.
+    var menuBarIconSystemName: String {
+        if featureRegistry.totalActiveTasksCount > 0 {
+            return "arrow.down.circle.fill"
+        }
+        return "doc.on.clipboard.fill"
     }
 
     var hasClipboardLink: Bool {

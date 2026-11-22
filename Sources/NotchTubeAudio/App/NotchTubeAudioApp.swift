@@ -15,12 +15,12 @@ struct NotchTubeAudioApp: App {
         MenuBarExtra {
             MenuBarContent(environment: environment)
         } label: {
-            Image(systemName: "waveform.badge.mic")
+            Image(systemName: environment.menuBarIconSystemName)
         }
         .menuBarExtraStyle(.menu)
 
         Settings {
-            SettingsView(settings: environment.settings)
+            SettingsView(environment: environment)
         }
     }
 }

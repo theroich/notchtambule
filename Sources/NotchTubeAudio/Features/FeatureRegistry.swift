@@ -106,6 +106,20 @@ final class FeatureRegistry {
         settings.setTriggerBehavior(behavior, for: id)
     }
 
+    /// Indica si un plugin soporta mostrar un prompt proactivo en el notch.
+    func pluginSupportsPrompt(_ plugin: any ClipboardFeaturePlugin) -> Bool {
+        if plugin.supportsPrompt {
+            return true
+        }
+        let probeItem = ClipboardItem(changeCount: 0, payload: .text(""))
+        return plugin.makePromptView(
+            for: probeItem,
+            context: .noop,
+            onComplete: {},
+            onDismiss: {}
+        ) != nil
+    }
+
     // MARK: - Evaluation & Routing
 
     /// Devuelve todos los plugins habilitados que soportan el `item` dado (`plugin.canHandle(item) == true`),
