@@ -29,13 +29,13 @@ enum AutoPasteSkipReason: Equatable, Sendable {
         case .disabledInSettings, .forcedCopyModifier:
             return nil
         case .accessibilityPermissionMissing:
-            return "Copiado al portapapeles · Activa Accesibilidad en Ajustes para pegar al hacer clic"
+            return L10n.string("autopaste.skip.accessibility_missing")
         case .secureEventInputActive:
-            return "Copiado al portapapeles (entrada segura activa)"
+            return L10n.string("autopaste.skip.secure_input")
         case .noTargetApplication:
-            return "Copiado al portapapeles (sin app de destino activa)"
+            return L10n.string("autopaste.skip.no_target_app")
         case .eventSynthesisFailed:
-            return "Copiado al portapapeles (no se pudo enviar ⌘V a la app de destino)"
+            return L10n.string("autopaste.skip.synthesis_failed")
         }
     }
 }
@@ -63,9 +63,9 @@ enum ClipboardItemClickFeedback: Equatable, Sendable {
     var badgeTitle: String {
         switch self {
         case .copied:
-            return "Copiado"
+            return L10n.string("clipboard.row.copied")
         case .pasted:
-            return "Pegado"
+            return L10n.string("clipboard.row.pasted")
         }
     }
 
@@ -272,7 +272,7 @@ final class AutoPasteService {
            !current.isTerminated {
             rememberedApp = current
             Log.clipboard.debug(
-                "App destino recordada para auto-paste: \(current.localizedName ?? "desconocida", privacy: .public) (\(current.bundleIdentifier ?? "sin bundle", privacy: .public))"
+                "Remembered target app for auto-paste: \(current.localizedName ?? "unknown", privacy: .public) (\(current.bundleIdentifier ?? "no-bundle", privacy: .public))"
             )
             return current
         }
@@ -291,17 +291,17 @@ final class AutoPasteService {
     /// - Returns: `.pasted` when `⌘V` was posted, or `.copiedOnly(reason:)` when auto-paste degraded to copy-only.
     func paste(into app: (any AutoPasteTargetApplication)? = nil) async -> PasteResult {
         guard canAutoPaste() else {
-            Log.clipboard.info("Auto-paste degradado a solo copiar: sin permiso de Accesibilidad")
+            Log.clipboard.info("Auto-paste degraded to copy-only: missing Accessibility permission")
             return .copiedOnly(reason: .accessibilityPermissionMissing)
         }
 
         guard !environment.isSecureEventInputEnabled() else {
-            Log.clipboard.info("Auto-paste degradado a solo copiar: SecureEventInput activo")
+            Log.clipboard.info("Auto-paste degraded to copy-only: SecureEventInput active")
             return .copiedOnly(reason: .secureEventInputActive)
         }
 
         guard let target = resolveTargetApplication(preferred: app) else {
-            Log.clipboard.info("Auto-paste degradado a solo copiar: no hay aplicación destino activa")
+            Log.clipboard.info("Auto-paste degraded to copy-only: no active target application")
             return .copiedOnly(reason: .noTargetApplication)
         }
 
@@ -325,17 +325,17 @@ final class AutoPasteService {
         // Re-check SecureEventInput after the target application regains focus
         // (e.g. focusing a password field inside the target app activates SecureEventInput).
         guard !environment.isSecureEventInputEnabled() else {
-            Log.clipboard.info("Auto-paste degradado a solo copiar: la app destino activó SecureEventInput")
+            Log.clipboard.info("Auto-paste degraded to copy-only: target app activated SecureEventInput")
             return .copiedOnly(reason: .secureEventInputActive)
         }
 
         guard environment.postCommandVKeystrokes() else {
-            Log.clipboard.error("No se pudo sintetizar el evento ⌘V mediante CGEvent")
+            Log.clipboard.error("Could not synthesize Command+V event via CGEvent")
             return .copiedOnly(reason: .eventSynthesisFailed)
         }
 
         Log.clipboard.info(
-            "⌘V sintetizado en \(target.localizedName ?? "app", privacy: .public)"
+            "Synthesized Command+V in \(target.localizedName ?? "app", privacy: .public)"
         )
         return .pasted
     }

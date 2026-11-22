@@ -55,7 +55,7 @@ final class ClipboardMonitor {
         RunLoop.main.add(timer, forMode: .common)
         self.timer = timer
 
-        Log.clipboard.info("Monitor del portapapeles iniciado")
+        Log.clipboard.info("Clipboard monitor started")
     }
 
     func stop() {
@@ -85,7 +85,7 @@ final class ClipboardMonitor {
 
         if let ignored = ignoredChangeCount, ignored == changeCount {
             ignoredChangeCount = nil
-            Log.clipboard.debug("Cambio del portapapeles ignorado (auto-copia changeCount=\(changeCount))")
+            Log.clipboard.debug("Clipboard change ignored (self-copy changeCount=\(changeCount))")
             return
         }
         ignoredChangeCount = nil
@@ -96,14 +96,14 @@ final class ClipboardMonitor {
 
         // Never re-capture writes marked with our own internal marker.
         if currentTypes.contains(PasteboardMarkerType.internalCaptureIgnore) {
-            Log.clipboard.debug("Cambio del portapapeles ignorado por marcador interno")
+            Log.clipboard.debug("Clipboard change ignored by internal marker")
             return
         }
 
         // 1. Check confidential / transient pasteboard types if privacy filtering is enabled.
         if settings.ignoreConfidentialPasteboardTypes,
            !currentTypes.isDisjoint(with: PasteboardMarkerType.confidentialTypes) {
-            Log.clipboard.debug("Contenido confidencial o transitorio ignorado")
+            Log.clipboard.debug("Confidential or transient content ignored")
             return
         }
 
@@ -125,7 +125,7 @@ final class ClipboardMonitor {
         lastContentHash = item.contentHash
         lastCapturedItem = item
 
-        Log.clipboard.info("Elemento del portapapeles capturado: \(item.contentType.rawValue, privacy: .public)")
+        Log.clipboard.info("Clipboard item captured: \(item.contentType.rawValue, privacy: .public)")
         onCapture?(item)
     }
 

@@ -66,17 +66,17 @@ final class DownloadItem: Identifiable {
     var statusText: String {
         switch status {
         case .queued:
-            return "En cola"
+            return L10n.string("downloads.status.queued")
         case .downloading:
-            return "Descargando \(Int((progress * 100).rounded()))%"
+            return L10n.format("downloads.status.downloading_percent", Int64((progress * 100).rounded()))
         case .converting:
-            return "Convirtiendo…"
+            return L10n.string("downloads.status.converting")
         case .completed:
-            return "Completado"
+            return L10n.string("downloads.status.completed")
         case .failed:
-            return "Error"
+            return L10n.string("downloads.status.failed")
         case .cancelled:
-            return "Cancelado"
+            return L10n.string("downloads.status.cancelled")
         }
     }
 

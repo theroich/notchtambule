@@ -35,7 +35,7 @@ struct FormatPills: View {
                         .contentShape(Capsule())
                 }
                 .buttonStyle(.plain)
-                .accessibilityLabel("Formato \(format.displayName)")
+                .accessibilityLabel(L10n.format("format.accessibility.label", format.displayName))
                 .accessibilityAddTraits(format == selection ? [.isSelected] : [])
             }
         }

@@ -16,8 +16,8 @@ struct YouTubeAudioSettingsView: View {
 
     var body: some View {
         Group {
-            Section("Descargas") {
-                LabeledContent("Carpeta de destino") {
+            Section(L10n.string("notch.tab.downloads")) {
+                LabeledContent(L10n.string("youtube.settings.destination_folder")) {
                     HStack(spacing: 8) {
                         Text(settings.downloadDirectory.path)
                             .font(.system(.caption, design: .monospaced))
@@ -27,7 +27,7 @@ struct YouTubeAudioSettingsView: View {
                             .textSelection(.enabled)
                             .frame(maxWidth: 280, alignment: .trailing)
 
-                        Button("Cambiar…") {
+                        Button(L10n.string("youtube.settings.change_folder")) {
                             chooseDownloadFolder()
                         }
 
@@ -36,12 +36,12 @@ struct YouTubeAudioSettingsView: View {
                         } label: {
                             Image(systemName: "folder")
                         }
-                        .help("Abrir la carpeta en Finder")
+                        .help(L10n.string("youtube.settings.open_in_finder.help"))
                     }
                 }
 
-                LabeledContent("Formato por defecto") {
-                    Picker("Formato por defecto", selection: defaultFormatBinding) {
+                LabeledContent(L10n.string("youtube.settings.default_format")) {
+                    Picker(L10n.string("youtube.settings.default_format"), selection: defaultFormatBinding) {
                         ForEach(AudioFormat.allCases) { format in
                             Text(format.displayName).tag(format)
                         }
@@ -52,7 +52,7 @@ struct YouTubeAudioSettingsView: View {
                 }
             }
 
-            Section("Herramientas") {
+            Section(L10n.string("youtube.settings.tools.section")) {
                 binaryRow(
                     title: "yt-dlp",
                     path: ytDlpBinding,
@@ -66,7 +66,7 @@ struct YouTubeAudioSettingsView: View {
                 )
 
                 HStack(spacing: 10) {
-                    Button("Autodetectar") {
+                    Button(L10n.string("youtube.settings.tools.autodetect")) {
                         autodetect()
                     }
 
@@ -80,7 +80,7 @@ struct YouTubeAudioSettingsView: View {
                     Spacer(minLength: 0)
                 }
 
-                Text("Se ejecutan los binarios instalados en el sistema. Instálalos con “brew install yt-dlp ffmpeg”.")
+                Text(L10n.string("youtube.settings.tools.caption"))
                     .font(.caption)
                     .foregroundStyle(.secondary)
             }
@@ -100,10 +100,18 @@ struct YouTubeAudioSettingsView: View {
 
                 Image(systemName: isAvailable ? "checkmark.circle.fill" : "xmark.circle.fill")
                     .foregroundStyle(isAvailable ? .green : .red)
-                    .help(isAvailable ? "Ejecutable válido" : "No se encontró un ejecutable en esta ruta")
-                    .accessibilityLabel(isAvailable ? "Ejecutable válido" : "Ejecutable no encontrado")
+                    .help(
+                        isAvailable
+                            ? L10n.string("youtube.settings.binary.valid.help")
+                            : L10n.string("youtube.settings.binary.missing.help")
+                    )
+                    .accessibilityLabel(
+                        isAvailable
+                            ? L10n.string("youtube.settings.binary.valid.help")
+                            : L10n.string("youtube.settings.binary.missing.accessibility")
+                    )
 
-                Button("Elegir…") {
+                Button(L10n.string("youtube.settings.binary.choose")) {
                     chooseExecutable(for: path)
                 }
             }
@@ -139,9 +147,9 @@ struct YouTubeAudioSettingsView: View {
         NSApp.activate(ignoringOtherApps: true)
 
         let panel = NSOpenPanel()
-        panel.title = "Elegir carpeta de descargas"
-        panel.prompt = "Elegir"
-        panel.message = "Los audios MP3 y WAV se guardarán en esta carpeta."
+        panel.title = L10n.string("youtube.settings.panel.folder.title")
+        panel.prompt = L10n.string("youtube.settings.panel.choose_prompt")
+        panel.message = L10n.string("youtube.settings.panel.folder.message")
         panel.canChooseDirectories = true
         panel.canChooseFiles = false
         panel.canCreateDirectories = true
@@ -157,8 +165,8 @@ struct YouTubeAudioSettingsView: View {
         NSApp.activate(ignoringOtherApps: true)
 
         let panel = NSOpenPanel()
-        panel.title = "Elegir ejecutable"
-        panel.prompt = "Elegir"
+        panel.title = L10n.string("youtube.settings.panel.executable.title")
+        panel.prompt = L10n.string("youtube.settings.panel.choose_prompt")
         panel.canChooseDirectories = false
         panel.canChooseFiles = true
         panel.treatsFilePackagesAsDirectories = false
@@ -184,7 +192,7 @@ struct YouTubeAudioSettingsView: View {
         let foundAll = settings.autodetectBinaries()
         detectionSucceeded = foundAll
         detectionMessage = foundAll
-            ? "Rutas actualizadas correctamente."
-            : "No se encontró alguno de los binarios. Revisa las rutas."
+            ? L10n.string("youtube.settings.autodetect.success")
+            : L10n.string("youtube.settings.autodetect.failure")
     }
 }

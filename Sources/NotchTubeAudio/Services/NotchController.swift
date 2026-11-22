@@ -95,7 +95,7 @@ final class NotchController: NotchPresenting {
         RunLoop.main.add(timer, forMode: .common)
         proximityTimer = timer
 
-        Log.notch.info("Monitor de proximidad del notch iniciado")
+        Log.notch.info("Notch proximity monitor started")
     }
 
     func stop() {

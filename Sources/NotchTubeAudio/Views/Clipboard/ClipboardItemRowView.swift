@@ -25,13 +25,6 @@ struct ClipboardItemRowView: View {
 
     @State private var isHovered = false
 
-    private static let relativeDateFormatter: RelativeDateTimeFormatter = {
-        let formatter = RelativeDateTimeFormatter()
-        formatter.locale = Locale(identifier: "es_ES")
-        formatter.unitsStyle = .abbreviated
-        return formatter
-    }()
-
     var body: some View {
         HStack(spacing: 9) {
             Button(action: onCopy) {
@@ -105,9 +98,9 @@ struct ClipboardItemRowView: View {
 
     var rowHelpTooltip: String {
         if isAutoPasteEnabled {
-            return "Clic para pegar en la app activa (⌥+Clic para solo copiar)"
+            return L10n.string("clipboard.row.paste.help")
         }
-        return "Clic para copiar al portapapeles"
+        return L10n.string("clipboard.row.copy.help")
     }
 
     // MARK: - Leading Icon / Thumbnail
@@ -304,8 +297,8 @@ struct ClipboardItemRowView: View {
                         .contentShape(Circle())
                 }
                 .buttonStyle(.plain)
-                .help(item.isPinned ? "Desfijar elemento" : "Fijar elemento")
-                .accessibilityLabel(item.isPinned ? "Desfijar elemento" : "Fijar elemento")
+                .help(item.isPinned ? L10n.string("clipboard.row.unpin.help") : L10n.string("clipboard.row.pin.help"))
+                .accessibilityLabel(item.isPinned ? L10n.string("clipboard.row.unpin.help") : L10n.string("clipboard.row.pin.help"))
 
                 Button(action: onRemove) {
                     Image(systemName: "xmark")
@@ -315,8 +308,8 @@ struct ClipboardItemRowView: View {
                         .contentShape(Circle())
                 }
                 .buttonStyle(.plain)
-                .help("Eliminar del historial")
-                .accessibilityLabel("Eliminar del historial")
+                .help(L10n.string("clipboard.row.remove.help"))
+                .accessibilityLabel(L10n.string("clipboard.row.remove.help"))
             }
         }
     }
@@ -324,7 +317,7 @@ struct ClipboardItemRowView: View {
     // MARK: - Formatting Helpers
 
     /// Combines `previewSubtitle` (which includes source app and domain/size/character count)
-    /// with the relative capture timestamp (`hace 2 min`).
+    /// with the relative capture timestamp.
     var formattedMetadataLine: String {
         let relativeTime = Self.formatRelativeTimestamp(item.capturedAt)
         if let subtitle = item.previewSubtitle, !subtitle.isEmpty {
@@ -333,12 +326,19 @@ struct ClipboardItemRowView: View {
         return relativeTime
     }
 
-    static func formatRelativeTimestamp(_ date: Date, relativeTo now: Date = Date()) -> String {
+    static func formatRelativeTimestamp(
+        _ date: Date,
+        relativeTo now: Date = Date(),
+        locale: Locale = L10n.currentLocale
+    ) -> String {
         let interval = now.timeIntervalSince(date)
         if interval < 5 {
-            return "ahora"
+            return L10n.string("clipboard.time.now", locale: locale)
         }
-        return relativeDateFormatter.localizedString(for: date, relativeTo: now)
+        let formatter = RelativeDateTimeFormatter()
+        formatter.locale = locale
+        formatter.unitsStyle = .abbreviated
+        return formatter.localizedString(for: date, relativeTo: now)
     }
 
     static func parseHexColor(_ raw: String) -> Color? {

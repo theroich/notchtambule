@@ -51,11 +51,11 @@ struct NotchPromptView: View {
                 FormatPills(selection: format, onSelect: onSelectFormat)
 
                 if !binariesAvailable {
-                    Label("Faltan yt-dlp/ffmpeg", systemImage: "exclamationmark.triangle.fill")
+                    Label(L10n.string("youtube.prompt.missing_binaries"), systemImage: "exclamationmark.triangle.fill")
                         .font(.system(size: 9.5, weight: .medium))
                         .foregroundStyle(.orange)
                         .lineLimit(1)
-                        .help("Configura las rutas de yt-dlp y ffmpeg en Ajustes")
+                        .help(L10n.string("youtube.prompt.missing_binaries.help"))
                 }
 
                 Spacer(minLength: 4)
@@ -69,15 +69,16 @@ struct NotchPromptView: View {
                         .contentShape(Circle())
                 }
                 .buttonStyle(.plain)
-                .help("Cancelar")
-                .accessibilityLabel("Cancelar")
+                .help(L10n.string("common.cancel"))
+                .accessibilityLabel(L10n.string("common.cancel"))
 
                 Button(action: onSave) {
                     HStack(spacing: 5) {
                         Image(systemName: "arrow.down.circle.fill")
                             .font(.system(size: 11, weight: .semibold))
-                        Text("Guardar audio")
+                        Text(L10n.string("youtube.prompt.save_audio"))
                             .font(.system(size: 11, weight: .semibold))
+                            .lineLimit(1)
                     }
                     .foregroundStyle(.black)
                     .padding(.horizontal, 12)
@@ -86,8 +87,8 @@ struct NotchPromptView: View {
                     .contentShape(Capsule())
                 }
                 .buttonStyle(.plain)
-                .help("Descargar el audio a la carpeta configurada")
-                .accessibilityLabel("Guardar audio")
+                .help(L10n.string("youtube.prompt.save_audio.help"))
+                .accessibilityLabel(L10n.string("youtube.prompt.save_audio"))
             }
         }
         .padding(.horizontal, 4)

@@ -26,6 +26,7 @@ struct NotchRootView: View {
         .frame(width: NotchMetrics.contentWidth)
         .foregroundStyle(.white)
         .tint(.white)
+        .environment(\.locale, appState.settings.resolvedLocale)
         .animation(.smooth(duration: 0.28), value: appState.notchMode)
     }
 
@@ -62,8 +63,9 @@ struct NotchRootView: View {
                         HStack(spacing: 4) {
                             Image(systemName: "doc.on.clipboard")
                                 .font(.system(size: 9.5, weight: .semibold))
-                            Text("Portapapeles")
+                            Text(L10n.string("notch.tab.clipboard"))
                                 .font(.system(size: 10, weight: .medium))
+                                .lineLimit(1)
                         }
                         .foregroundStyle(.white.opacity(0.75))
                         .padding(.horizontal, 8)
@@ -71,7 +73,7 @@ struct NotchRootView: View {
                         .background(Capsule().fill(.white.opacity(0.10)))
                     }
                     .buttonStyle(.plain)
-                    .help("Volver al historial del portapapeles")
+                    .help(L10n.string("notch.prompt.back_to_clipboard.help"))
                 }
                 .padding(.horizontal, 4)
 

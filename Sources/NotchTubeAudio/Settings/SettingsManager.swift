@@ -24,6 +24,8 @@ final class SettingsManager {
     static let defaultMaxClipboardHistoryItems: Int = 100
 
     private enum Key {
+        static let appLanguage = "notchtube.appLanguage"
+        static let appleLanguages = "AppleLanguages"
         static let downloadDirectory = "notchtube.downloadDirectory"
         static let defaultFormat = "notchtube.defaultFormat"
         static let ytDlpPath = "notchtube.ytDlpPath"
@@ -39,6 +41,21 @@ final class SettingsManager {
     }
 
     private let defaults: UserDefaults
+
+    var appLanguage: AppLanguage {
+        didSet {
+            defaults.set(appLanguage.rawValue, forKey: Key.appLanguage)
+            applyLanguagePreference()
+        }
+    }
+
+    var resolvedLanguageCode: String {
+        appLanguage.resolvedLanguageCode()
+    }
+
+    var resolvedLocale: Locale {
+        appLanguage.resolvedLocale()
+    }
 
     var downloadDirectory: URL {
         didSet {
@@ -155,6 +172,9 @@ final class SettingsManager {
     init(defaults: UserDefaults = .standard) {
         self.defaults = defaults
 
+        let storedLanguage = defaults.string(forKey: Key.appLanguage)
+        self.appLanguage = storedLanguage.flatMap(AppLanguage.init(rawValue:)) ?? .system
+
         let fallbackDownloads = FileManager.default
             .urls(for: .downloadsDirectory, in: .userDomainMask)
             .first
@@ -214,6 +234,21 @@ final class SettingsManager {
         } else {
             self.pluginTriggerBehaviors = [:]
         }
+
+        if defaults === UserDefaults.standard || storedLanguage != nil {
+            applyLanguagePreference()
+        }
+    }
+
+    /// Synchronizes `L10n.currentLanguage` and the `AppleLanguages` UserDefaults override.
+    func applyLanguagePreference() {
+        L10n.currentLanguage = appLanguage
+        switch appLanguage {
+        case .system:
+            defaults.removeObject(forKey: Key.appleLanguages)
+        case .spanish, .english:
+            defaults.set([appLanguage.rawValue], forKey: Key.appleLanguages)
+        }
     }
 
     // MARK: - Plugin Preferences
@@ -259,7 +294,7 @@ final class SettingsManager {
             foundAll = false
         }
 
-        Log.settings.info("Autodetección de binarios finalizada (todo encontrado: \(foundAll))")
+        Log.settings.info("Binary auto-detection finished (foundAll: \(foundAll))")
         return foundAll
     }
 }

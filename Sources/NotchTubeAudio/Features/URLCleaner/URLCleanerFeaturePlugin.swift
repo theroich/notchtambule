@@ -50,8 +50,8 @@ final class URLCleanerFeaturePlugin: ClipboardFeaturePlugin {
     ]
 
     let id: String = URLCleanerFeaturePlugin.pluginID
-    let displayName: String = "Limpiador de URLs"
-    let summary: String = "Detecta parámetros de seguimiento en enlaces (utm_*, fbclid, gclid, si…) y los elimina con un clic."
+    var displayName: String { L10n.string("plugin.url_cleaner.name") }
+    var summary: String { L10n.string("plugin.url_cleaner.summary") }
     let iconSystemName: String = "sparkles"
     let priority: FeaturePriority = .normal
     let defaultTriggerBehavior: FeatureTriggerBehavior = .historyActionOnly
@@ -78,7 +78,7 @@ final class URLCleanerFeaturePlugin: ClipboardFeaturePlugin {
             FeatureQuickAction(
                 id: "\(id).clean.\(item.id.uuidString)",
                 pluginID: id,
-                title: "Limpiar URL (quitar tracking)",
+                title: L10n.string("plugin.url_cleaner.action.clean"),
                 iconSystemName: "sparkles"
             ) {
                 Self.applyCleanedURL(result.cleanedURL, removedCount: result.removedParameters.count, context: context)
@@ -197,8 +197,13 @@ final class URLCleanerFeaturePlugin: ClipboardFeaturePlugin {
 
     private static func applyCleanedURL(_ cleanURL: URL, removedCount: Int, context: FeatureActionContext) {
         context.writeToClipboard(.url(cleanURL, rawText: cleanURL.absoluteString))
-        let label = removedCount == 1 ? "1 parámetro eliminado" : "\(removedCount) parámetros eliminados"
-        context.notifyUser(message: "URL limpia copiada (\(label))", icon: "sparkles")
+        let message: String
+        if removedCount == 1 {
+            message = L10n.string("plugin.url_cleaner.notify.cleaned_one")
+        } else {
+            message = L10n.format("plugin.url_cleaner.notify.cleaned_many", Int64(removedCount))
+        }
+        context.notifyUser(message: message, icon: "sparkles")
     }
 }
 
@@ -220,7 +225,7 @@ private struct URLCleanerPromptView: View {
                     .foregroundStyle(.white)
                     .lineLimit(2)
 
-                Text("Se eliminarán: \(removedParameters.joined(separator: ", "))")
+                Text(L10n.format("plugin.url_cleaner.prompt.will_remove", removedParameters.joined(separator: ", ")))
                     .font(.system(size: 10))
                     .foregroundStyle(.white.opacity(0.62))
                     .lineLimit(1)
@@ -237,9 +242,11 @@ private struct URLCleanerPromptView: View {
                         .background(Circle().fill(.white.opacity(0.12)))
                 }
                 .buttonStyle(.plain)
+                .help(L10n.string("common.cancel"))
+                .accessibilityLabel(L10n.string("common.cancel"))
 
                 Button(action: onClean) {
-                    Label("Limpiar URL", systemImage: "sparkles")
+                    Label(L10n.string("plugin.url_cleaner.prompt.clean_button"), systemImage: "sparkles")
                         .font(.system(size: 11, weight: .semibold))
                         .foregroundStyle(.black)
                         .padding(.horizontal, 12)

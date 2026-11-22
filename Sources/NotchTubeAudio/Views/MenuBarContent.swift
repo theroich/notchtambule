@@ -52,8 +52,8 @@ struct MenuBarContent: View {
     /// Título dinámico para la acción principal de mostrar/ocultar el portapapeles en el notch.
     var toggleNotchMenuTitle: String {
         appState.notchMode != .idle
-            ? "Ocultar portapapeles en el notch"
-            : "Mostrar portapapeles en el notch"
+            ? L10n.string("menubar.toggle_notch.hide")
+            : L10n.string("menubar.toggle_notch.show")
     }
 
     var body: some View {
@@ -61,9 +61,9 @@ struct MenuBarContent: View {
             onToggleNotch()
         }
 
-        Menu("Elementos recientes") {
+        Menu(L10n.string("menubar.recent_items")) {
             if recentItems.isEmpty {
-                Text("Sin elementos recientes")
+                Text(L10n.string("menubar.recent_items.empty"))
                     .foregroundStyle(.secondary)
             } else {
                 ForEach(recentItems) { item in
@@ -82,25 +82,25 @@ struct MenuBarContent: View {
             }
         }
 
-        Button("Ejecutar acción sobre el portapapeles actual") {
+        Button(L10n.string("menubar.run_action")) {
             onRunCurrentClipboardAction()
         }
 
-        Button("Limpiar historial no fijado") {
+        Button(L10n.string("menubar.clear_unpinned")) {
             historyStore.clearUnpinned()
         }
         .disabled(!hasUnpinnedItems)
 
         Divider()
 
-        Button("Configuración…") {
+        Button(L10n.string("menubar.settings")) {
             openSettingsWindow()
         }
         .keyboardShortcut(",", modifiers: .command)
 
         Divider()
 
-        Button("Salir") {
+        Button(L10n.string("menubar.quit")) {
             NSApp.terminate(nil)
         }
         .keyboardShortcut("q", modifiers: .command)

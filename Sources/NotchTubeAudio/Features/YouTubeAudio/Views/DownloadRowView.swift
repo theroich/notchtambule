@@ -93,17 +93,17 @@ struct DownloadRowView: View {
     @ViewBuilder
     private var actionButton: some View {
         if item.canCancel {
-            iconButton(systemName: "xmark.circle.fill", help: "Cancelar descarga", action: onCancel)
+            iconButton(systemName: "xmark.circle.fill", help: L10n.string("downloads.row.cancel.help"), action: onCancel)
         } else if item.canReveal {
-            iconButton(systemName: "magnifyingglass", help: "Mostrar en Finder", action: onReveal)
+            iconButton(systemName: "magnifyingglass", help: L10n.string("downloads.row.reveal.help"), action: onReveal)
         } else if item.canRetry {
-            iconButton(systemName: "arrow.clockwise", help: "Reintentar", action: onRetry)
+            iconButton(systemName: "arrow.clockwise", help: L10n.string("downloads.row.retry.help"), action: onRetry)
         } else {
             Image(systemName: "checkmark.circle.fill")
                 .font(.system(size: 13))
                 .foregroundStyle(.green.opacity(0.85))
                 .frame(width: 22, height: 22)
-                .accessibilityLabel("Completado")
+                .accessibilityLabel(L10n.string("downloads.status.completed"))
         }
     }
 
@@ -136,7 +136,7 @@ struct FormatBadge: View {
             .overlay {
                 Capsule().strokeBorder(tint.opacity(0.35), lineWidth: 1)
             }
-            .accessibilityLabel("Formato \(format.displayName)")
+            .accessibilityLabel(L10n.format("format.accessibility.label", format.displayName))
     }
 
     private var tint: Color {

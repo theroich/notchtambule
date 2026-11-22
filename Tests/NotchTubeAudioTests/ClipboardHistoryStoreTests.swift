@@ -362,7 +362,13 @@ struct ClipboardHistoryStoreTests {
         harness.store.record(imageItem)
 
         // Wait for the debounced background write to complete
-        try await Task.sleep(nanoseconds: 150_000_000)
+        for _ in 0..<20 {
+            try await Task.sleep(nanoseconds: 50_000_000)
+            await Task.yield()
+            if FileManager.default.fileExists(atPath: harness.storage.historyFileURL.path) {
+                break
+            }
+        }
 
         #expect(FileManager.default.fileExists(atPath: harness.storage.historyFileURL.path))
         #expect(FileManager.default.fileExists(atPath: harness.storage.imageFileURL(for: imageItem.id).path))

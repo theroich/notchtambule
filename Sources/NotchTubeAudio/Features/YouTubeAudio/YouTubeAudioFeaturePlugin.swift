@@ -16,9 +16,9 @@ final class YouTubeAudioFeaturePlugin: ClipboardFeaturePlugin {
     static let pluginID = "com.notchclip.plugin.youtube-audio"
 
     let id: String = YouTubeAudioFeaturePlugin.pluginID
-    let displayName: String = "YouTube Audio"
-    let activityPanelTitle: String = "Descargas"
-    let summary: String = "Detecta enlaces de YouTube y permite descargar su audio en MP3 o WAV usando yt-dlp y ffmpeg."
+    var displayName: String { L10n.string("plugin.youtube_audio.name") }
+    var activityPanelTitle: String { L10n.string("notch.tab.downloads") }
+    var summary: String { L10n.string("plugin.youtube_audio.summary") }
     let iconSystemName: String = "waveform.badge.mic"
     let priority: FeaturePriority = .high
     let defaultTriggerBehavior: FeatureTriggerBehavior = .automaticPrompt
@@ -84,7 +84,7 @@ final class YouTubeAudioFeaturePlugin: ClipboardFeaturePlugin {
             FeatureQuickAction(
                 id: "\(id).download-mp3.\(item.id.uuidString)",
                 pluginID: id,
-                title: "Descargar MP3",
+                title: L10n.string("plugin.youtube_audio.action.download_mp3"),
                 iconSystemName: "arrow.down.circle"
             ) { [weak self] in
                 self?.enqueueQuickDownload(for: link, format: .mp3, context: context)
@@ -92,7 +92,7 @@ final class YouTubeAudioFeaturePlugin: ClipboardFeaturePlugin {
             FeatureQuickAction(
                 id: "\(id).download-wav.\(item.id.uuidString)",
                 pluginID: id,
-                title: "Descargar WAV",
+                title: L10n.string("plugin.youtube_audio.action.download_wav"),
                 iconSystemName: "waveform"
             ) { [weak self] in
                 self?.enqueueQuickDownload(for: link, format: .wav, context: context)

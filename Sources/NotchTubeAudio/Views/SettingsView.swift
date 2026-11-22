@@ -78,17 +78,18 @@ struct SettingsView: View {
         TabView(selection: $selectedTab) {
             clipboardAndGeneralTab
                 .tabItem {
-                    Label("Portapapeles y General", systemImage: "doc.on.clipboard")
+                    Label(L10n.string("settings.tab.general"), systemImage: "doc.on.clipboard")
                 }
                 .tag(SettingsTab.clipboardAndGeneral)
 
             PluginsSettingsTabView(featureRegistry: featureRegistry)
                 .tabItem {
-                    Label("Módulos", systemImage: "puzzlepiece.extension")
+                    Label(L10n.string("settings.tab.modules"), systemImage: "puzzlepiece.extension")
                 }
                 .tag(SettingsTab.plugins)
         }
-        .frame(width: 600, height: 500)
+        .environment(\.locale, settings.resolvedLocale)
+        .frame(width: 600, height: 520)
         .onAppear {
             refreshAccessibilityStatus()
         }
@@ -105,36 +106,54 @@ struct SettingsView: View {
 
     private var clipboardAndGeneralTab: some View {
         Form {
-            Section("Monitorización del Portapapeles") {
-                Toggle("Escuchar el portapapeles automáticamente", isOn: monitoringBinding)
+            Section(L10n.string("settings.language.section")) {
+                LabeledContent(L10n.string("settings.language.picker.label")) {
+                    Picker(L10n.string("settings.language.picker.label"), selection: languageBinding) {
+                        ForEach(AppLanguage.allCases) { language in
+                            Text(language.displayTitle).tag(language)
+                        }
+                    }
+                    .labelsHidden()
+                    .frame(width: 160)
+                }
 
-                Toggle("Persistir historial al cerrar la aplicación", isOn: persistHistoryBinding)
-
-                Toggle("Ignorar contenido confidencial de gestores de contraseñas", isOn: ignoreConfidentialBinding)
-
-                Text("Se excluyen automáticamente las entradas marcadas como confidenciales o transitorias por aplicaciones como 1Password, Bitwarden o macOS Keychain.")
+                Text(L10n.string("settings.language.restart_note"))
                     .font(.caption)
                     .foregroundStyle(.secondary)
             }
 
-            Section("Pegado Automático (Auto-Paste)") {
-                Toggle("Pegar al hacer click en un elemento del historial", isOn: autoPasteBinding)
+            Section(L10n.string("settings.clipboard.monitoring.section")) {
+                Toggle(L10n.string("settings.clipboard.monitoring.auto"), isOn: monitoringBinding)
 
-                Text("Al pulsar sobre una fila del historial, el elemento se copia al portapapeles, el notch se cierra y se pega directamente (⌘V) en la aplicación y el campo donde estaba el cursor. Mantén pulsada la tecla ⌥ (Opción) al hacer clic para forzar «solo copiar».")
+                Toggle(L10n.string("settings.clipboard.monitoring.persist"), isOn: persistHistoryBinding)
+
+                Toggle(L10n.string("settings.clipboard.monitoring.ignore_confidential"), isOn: ignoreConfidentialBinding)
+
+                Text(L10n.string("settings.clipboard.monitoring.ignore_confidential.caption"))
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+
+            Section(L10n.string("settings.autopaste.section")) {
+                Toggle(L10n.string("settings.autopaste.toggle"), isOn: autoPasteBinding)
+
+                Text(L10n.string("settings.autopaste.caption"))
                     .font(.caption)
                     .foregroundStyle(.secondary)
 
-                LabeledContent("Permiso de Accesibilidad") {
+                LabeledContent(L10n.string("settings.autopaste.accessibility_permission")) {
                     HStack(spacing: 10) {
                         Label(
-                            isAccessibilityTrusted ? "Concedido" : "Requerido para auto-pegar",
+                            isAccessibilityTrusted
+                                ? L10n.string("settings.autopaste.permission.granted")
+                                : L10n.string("settings.autopaste.permission.required"),
                             systemImage: isAccessibilityTrusted ? "checkmark.shield.fill" : "exclamationmark.triangle.fill"
                         )
                         .font(.caption.weight(.medium))
                         .foregroundStyle(isAccessibilityTrusted ? .green : .orange)
 
                         if !isAccessibilityTrusted {
-                            Button("Abrir Accesibilidad…") {
+                            Button(L10n.string("settings.autopaste.open_accessibility")) {
                                 autoPasteService.openAccessibilitySettings(promptIfNeeded: true)
                                 refreshAccessibilityStatus()
                             }
@@ -145,65 +164,65 @@ struct SettingsView: View {
                         } label: {
                             Image(systemName: "arrow.clockwise")
                         }
-                        .help("Comprobar estado del permiso de Accesibilidad")
+                        .help(L10n.string("settings.autopaste.check_permission.help"))
                     }
                 }
 
                 if !isAccessibilityTrusted {
-                    Text("Sin permiso de Accesibilidad, hacer clic en un elemento seguirá copiándolo al portapapeles normalmente. Para activar el pegado directo, concede permiso en Ajustes del Sistema → Privacidad y seguridad → Accesibilidad.")
+                    Text(L10n.string("settings.autopaste.missing_permission.caption"))
                         .font(.caption)
                         .foregroundStyle(.secondary)
                 }
             }
 
-            Section("Historial del Portapapeles") {
-                LabeledContent("Límite de elementos en el historial") {
-                    Picker("Límite de elementos en el historial", selection: maxHistoryItemsBinding) {
+            Section(L10n.string("settings.clipboard.history.section")) {
+                LabeledContent(L10n.string("settings.clipboard.history.limit")) {
+                    Picker(L10n.string("settings.clipboard.history.limit"), selection: maxHistoryItemsBinding) {
                         ForEach(availableHistoryLimitOptions, id: \.self) { limit in
-                            Text("\(limit) elementos").tag(limit)
+                            Text(L10n.format("settings.clipboard.history.limit.items_count", Int64(limit))).tag(limit)
                         }
                     }
                     .labelsHidden()
                     .frame(width: 160)
                 }
 
-                LabeledContent("Mantenimiento") {
+                LabeledContent(L10n.string("settings.clipboard.history.maintenance")) {
                     HStack(spacing: 10) {
                         if let historyStore {
-                            Text("\(historyStore.items.count) elementos guardados")
+                            Text(L10n.format("settings.clipboard.history.saved_count", Int64(historyStore.items.count)))
                                 .font(.caption)
                                 .foregroundStyle(.secondary)
                         }
 
-                        Button("Vaciar historial ahora…", role: .destructive) {
+                        Button(L10n.string("settings.clipboard.history.clear_now"), role: .destructive) {
                             isConfirmingClearHistory = true
                         }
                         .disabled(historyStore?.items.isEmpty ?? false)
                     }
                 }
                 .confirmationDialog(
-                    "¿Vaciar todo el historial del portapapeles?",
+                    L10n.string("settings.clipboard.history.clear_dialog.title"),
                     isPresented: $isConfirmingClearHistory,
                     titleVisibility: .visible
                 ) {
-                    Button("Vaciar todo (incluidos fijados)", role: .destructive) {
+                    Button(L10n.string("settings.clipboard.history.clear_dialog.clear_all"), role: .destructive) {
                         historyStore?.clearAll()
                     }
 
                     if historyStore?.items.contains(where: \.isPinned) == true {
-                        Button("Vaciar solo elementos no fijados") {
+                        Button(L10n.string("settings.clipboard.history.clear_dialog.clear_unpinned")) {
                             historyStore?.clearUnpinned()
                         }
                     }
 
-                    Button("Cancelar", role: .cancel) {}
+                    Button(L10n.string("common.cancel"), role: .cancel) {}
                 } message: {
-                    Text("Esta acción eliminará los elementos guardados en el historial del portapapeles.")
+                    Text(L10n.string("settings.clipboard.history.clear_dialog.message"))
                 }
             }
 
-            Section("Comportamiento del Notch") {
-                LabeledContent("Ocultar el aviso tras") {
+            Section(L10n.string("settings.notch.section")) {
+                LabeledContent(L10n.string("settings.notch.auto_dismiss")) {
                     HStack(spacing: 10) {
                         Slider(
                             value: promptDurationBinding,
@@ -212,14 +231,14 @@ struct SettingsView: View {
                         )
                         .frame(width: 190)
 
-                        Text("\(Int(settings.promptAutoDismissSeconds)) s")
+                        Text(L10n.format("settings.notch.seconds_short", Int64(settings.promptAutoDismissSeconds)))
                             .font(.system(.caption, design: .monospaced))
                             .monospacedDigit()
                             .frame(width: 34, alignment: .trailing)
                     }
                 }
 
-                Text("El aviso emergente de los módulos permanece abierto mientras el cursor esté sobre el notch.")
+                Text(L10n.string("settings.notch.caption"))
                     .font(.caption)
                     .foregroundStyle(.secondary)
             }
@@ -236,6 +255,13 @@ struct SettingsView: View {
     }
 
     // MARK: - Bindings
+
+    private var languageBinding: Binding<AppLanguage> {
+        Binding(
+            get: { settings.appLanguage },
+            set: { settings.appLanguage = $0 }
+        )
+    }
 
     private var monitoringBinding: Binding<Bool> {
         Binding(

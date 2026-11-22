@@ -51,7 +51,7 @@ final class DownloadManager {
         isShuttingDown = false
         let item = DownloadItem(video: video, format: format)
         items.insert(item, at: 0)
-        Log.downloads.info("Encolada descarga \(item.id.uuidString, privacy: .public) (\(format.rawValue, privacy: .public))")
+        Log.downloads.info("Queued download \(item.id.uuidString, privacy: .public) (\(format.rawValue, privacy: .public))")
         startNextIfPossible()
     }
 
@@ -77,7 +77,7 @@ final class DownloadManager {
             run.cancelled = true
             run.terminate()
         }
-        Log.downloads.info("Cancelada descarga \(item.id.uuidString, privacy: .public)")
+        Log.downloads.info("Cancelled download \(item.id.uuidString, privacy: .public)")
     }
 
     func retry(_ item: DownloadItem) {
@@ -106,7 +106,7 @@ final class DownloadManager {
             item.status = .cancelled
             item.finishedAt = item.finishedAt ?? Date()
         }
-        Log.downloads.info("Procesos de descarga terminados")
+        Log.downloads.info("Download processes terminated")
     }
 
     // MARK: - Scheduling
@@ -122,13 +122,13 @@ final class DownloadManager {
     private func start(_ item: DownloadItem) {
         let ytDlpPath = settings.ytDlpPath.trimmingCharacters(in: .whitespacesAndNewlines)
         guard BinaryLocator.isExecutable(ytDlpPath) else {
-            fail(item, message: "No se encontró yt-dlp en “\(ytDlpPath)”.")
+            fail(item, message: L10n.format("downloads.error.ytdlp_not_found", ytDlpPath))
             return
         }
 
         let ffmpegPath = settings.ffmpegPath.trimmingCharacters(in: .whitespacesAndNewlines)
         guard BinaryLocator.isExecutable(ffmpegPath) else {
-            fail(item, message: "No se encontró ffmpeg en “\(ffmpegPath)”.")
+            fail(item, message: L10n.format("downloads.error.ffmpeg_not_found", ffmpegPath))
             return
         }
 
@@ -136,7 +136,7 @@ final class DownloadManager {
         do {
             try FileActions.ensureDirectory(destination)
         } catch {
-            fail(item, message: "No se pudo crear la carpeta de destino: \(error.localizedDescription)")
+            fail(item, message: L10n.format("downloads.error.create_directory_failed", error.localizedDescription))
             return
         }
 
@@ -206,12 +206,12 @@ final class DownloadManager {
 
         do {
             try process.run()
-            Log.downloads.info("Iniciado yt-dlp (pid \(process.processIdentifier)) para \(item.title, privacy: .public)")
+            Log.downloads.info("Started yt-dlp (pid \(process.processIdentifier)) for \(item.title, privacy: .public)")
         } catch {
             running.removeValue(forKey: item.id)
             stdoutPipe.fileHandleForReading.readabilityHandler = nil
             stderrPipe.fileHandleForReading.readabilityHandler = nil
-            fail(item, message: "No se pudo ejecutar yt-dlp: \(error.localizedDescription)")
+            fail(item, message: L10n.format("downloads.error.launch_failed", error.localizedDescription))
         }
     }
 
@@ -357,13 +357,13 @@ final class DownloadManager {
                 item.outputFileURL = locateOutputFile(for: item)
             }
             if item.outputFileURL == nil {
-                Log.downloads.error("yt-dlp terminó correctamente pero no se pudo resolver el archivo final")
+                Log.downloads.error("yt-dlp finished successfully but output file could not be resolved")
             } else {
-                Log.downloads.info("Descarga completada: \(item.outputFileURL?.lastPathComponent ?? "", privacy: .public)")
+                Log.downloads.info("Download completed: \(item.outputFileURL?.lastPathComponent ?? "", privacy: .public)")
             }
         } else {
             let message = run?.lastError
-                ?? "yt-dlp terminó con código \(exitCode)."
+                ?? L10n.format("downloads.error.exit_code", Int64(exitCode))
 
             if Self.isForbiddenError(message), !fallbackAttemptedItems.contains(itemID) {
                 // Some videos are blocked for the default YouTube client with
@@ -376,12 +376,12 @@ final class DownloadManager {
                 item.finishedAt = nil
                 item.outputFileURL = nil
                 item.errorMessage = nil
-                Log.downloads.notice("HTTP 403 detectado; reintentando con el cliente web_embedded")
+                Log.downloads.notice("HTTP 403 detected; retrying with web_embedded client")
             } else {
                 item.status = .failed
                 item.finishedAt = Date()
                 item.errorMessage = Self.friendlyErrorMessage(from: message)
-                Log.downloads.error("Descarga fallida (\(exitCode)): \(message, privacy: .public)")
+                Log.downloads.error("Download failed (\(exitCode)): \(message, privacy: .public)")
             }
         }
     }
@@ -395,7 +395,7 @@ final class DownloadManager {
 
     private static func friendlyErrorMessage(from message: String) -> String {
         if isForbiddenError(message) {
-            return "HTTP 403: YouTube bloqueó la descarga. Actualiza yt-dlp con «brew upgrade yt-dlp» e inténtalo de nuevo."
+            return L10n.string("downloads.error.http_403")
         }
         return message
     }

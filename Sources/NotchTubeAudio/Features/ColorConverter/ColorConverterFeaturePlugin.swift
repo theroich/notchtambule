@@ -54,8 +54,8 @@ final class ColorConverterFeaturePlugin: ClipboardFeaturePlugin {
     static let pluginID = "com.notchclip.plugin.color-converter"
 
     let id: String = ColorConverterFeaturePlugin.pluginID
-    let displayName: String = "Conversor de Color"
-    let summary: String = "Detecta códigos de color HEX (#RRGGBB, #RGB, #RRGGBBAA) y RGB y los convierte entre HEX, RGB y SwiftUI Color."
+    var displayName: String { L10n.string("plugin.color_converter.name") }
+    var summary: String { L10n.string("plugin.color_converter.summary") }
     let iconSystemName: String = "paintpalette"
     let priority: FeaturePriority = .low
     let defaultTriggerBehavior: FeatureTriggerBehavior = .historyActionOnly
@@ -77,32 +77,41 @@ final class ColorConverterFeaturePlugin: ClipboardFeaturePlugin {
             FeatureQuickAction(
                 id: "\(id).copy-rgb.\(item.id.uuidString)",
                 pluginID: id,
-                title: "Copiar como RGB",
+                title: L10n.string("plugin.color_converter.action.copy_rgb"),
                 iconSystemName: "paintpalette"
             ) {
                 let rgb = color.rgbString
                 context.writeToClipboard(.text(rgb))
-                context.notifyUser(message: "Color copiado como \(rgb)", icon: "paintpalette")
+                context.notifyUser(
+                    message: L10n.format("plugin.color_converter.notify.copied_as", rgb),
+                    icon: "paintpalette"
+                )
             },
             FeatureQuickAction(
                 id: "\(id).copy-hex.\(item.id.uuidString)",
                 pluginID: id,
-                title: "Copiar como HEX",
+                title: L10n.string("plugin.color_converter.action.copy_hex"),
                 iconSystemName: "number"
             ) {
                 let hex = color.hexString
                 context.writeToClipboard(.text(hex))
-                context.notifyUser(message: "Color copiado como \(hex)", icon: "number")
+                context.notifyUser(
+                    message: L10n.format("plugin.color_converter.notify.copied_as", hex),
+                    icon: "number"
+                )
             },
             FeatureQuickAction(
                 id: "\(id).copy-swiftui.\(item.id.uuidString)",
                 pluginID: id,
-                title: "Copiar como SwiftUI Color",
+                title: L10n.string("plugin.color_converter.action.copy_swiftui"),
                 iconSystemName: "swift"
             ) {
                 let swiftUI = color.swiftUIColorString
                 context.writeToClipboard(.text(swiftUI))
-                context.notifyUser(message: "SwiftUI Color copiado", icon: "swift")
+                context.notifyUser(
+                    message: L10n.string("plugin.color_converter.notify.copied_swiftui"),
+                    icon: "swift"
+                )
             }
         ]
     }

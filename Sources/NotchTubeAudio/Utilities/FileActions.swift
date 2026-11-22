@@ -22,7 +22,7 @@ enum FileActions {
             do {
                 try FileManager.default.createDirectory(at: url, withIntermediateDirectories: true)
             } catch {
-                Log.app.error("No se pudo crear la carpeta: \(error.localizedDescription, privacy: .public)")
+                Log.app.error("Could not create folder: \(error.localizedDescription, privacy: .public)")
                 return false
             }
         }

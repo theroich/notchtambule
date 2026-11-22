@@ -63,7 +63,7 @@ struct PluginsSettingsTabView: View {
                         Text(plugin.displayName)
                             .font(.headline)
 
-                        Text(isEnabled ? "Activo" : "Inactivo")
+                        Text(isEnabled ? L10n.string("settings.plugins.status.active") : L10n.string("settings.plugins.status.inactive"))
                             .font(.caption2.weight(.semibold))
                             .foregroundStyle(isEnabled ? .green : .secondary)
                             .padding(.horizontal, 6)
@@ -82,20 +82,24 @@ struct PluginsSettingsTabView: View {
 
                 Spacer(minLength: 8)
 
-                Toggle("Habilitar módulo", isOn: enabledBinding(for: plugin.id))
+                Toggle(L10n.string("settings.plugins.enable_module"), isOn: enabledBinding(for: plugin.id))
                     .labelsHidden()
                     .toggleStyle(.switch)
-                    .help(isEnabled ? "Desactivar \(plugin.displayName)" : "Activar \(plugin.displayName)")
-                    .accessibilityLabel("Habilitar \(plugin.displayName)")
+                    .help(
+                        isEnabled
+                            ? L10n.format("settings.plugins.disable_named", plugin.displayName)
+                            : L10n.format("settings.plugins.enable_named", plugin.displayName)
+                    )
+                    .accessibilityLabel(L10n.format("settings.plugins.enable_accessibility", plugin.displayName))
             }
             .padding(.vertical, 2)
 
             if featureRegistry.pluginSupportsPrompt(plugin) {
-                Picker("Modo de disparo al copiar", selection: triggerBehaviorBinding(for: plugin.id)) {
-                    Text("Mostrar aviso automático en el notch al copiar")
+                Picker(L10n.string("settings.plugins.trigger_mode"), selection: triggerBehaviorBinding(for: plugin.id)) {
+                    Text(L10n.string("settings.plugins.trigger.automatic_prompt"))
                         .tag(FeatureTriggerBehavior.automaticPrompt)
 
-                    Text("Solo mostrar acción rápida en el historial")
+                    Text(L10n.string("settings.plugins.trigger.history_only"))
                         .tag(FeatureTriggerBehavior.historyActionOnly)
                 }
                 .disabled(!isEnabled)
@@ -111,10 +115,10 @@ struct PluginsSettingsTabView: View {
                 .font(.system(size: 28, weight: .medium))
                 .foregroundStyle(.secondary)
 
-            Text("No hay módulos registrados")
+            Text(L10n.string("settings.plugins.empty.title"))
                 .font(.headline)
 
-            Text("Registra instancias de ClipboardFeaturePlugin en FeatureRegistry para configurarlas aquí.")
+            Text(L10n.string("settings.plugins.empty.subtitle"))
                 .font(.caption)
                 .foregroundStyle(.secondary)
                 .multilineTextAlignment(.center)
