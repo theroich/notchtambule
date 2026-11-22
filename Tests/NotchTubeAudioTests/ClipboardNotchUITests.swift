@@ -439,4 +439,84 @@ struct ClipboardNotchUITests {
         let historyFittingHeight = historyRootHosting.fittingSize.height
         #expect(historyFittingHeight > downloadsFittingHeight)
     }
+
+    @Test func filterPillsStayOnSingleLineInsideHorizontalScrollWithFixedHeight() throws {
+        var selectedFilter: ClipboardContentFilter = .all
+        let pillsView = ClipboardFilterPillsView(selection: selectedFilter) { filter in
+            selectedFilter = filter
+        }
+
+        // Measure the natural single-line height of a standalone pill label
+        let singleLineReference = NSHostingView(
+            rootView: HStack(spacing: 4) {
+                Image(systemName: "photo")
+                    .font(.system(size: 9.5, weight: .semibold))
+                Text("Imágenes")
+                    .font(.system(size: 10.5, weight: .semibold, design: .rounded))
+                    .lineLimit(1)
+                    .fixedSize(horizontal: true, vertical: false)
+            }
+            .padding(.horizontal, 8)
+            .padding(.vertical, 4.5)
+            .padding(.vertical, 1)
+        )
+        singleLineReference.layoutSubtreeIfNeeded()
+        let expectedSingleLineHeight = singleLineReference.fittingSize.height
+
+        // Host ClipboardFilterPillsView constrained to the notch width (440 pt) and even narrower (280 pt)
+        let constrainedHosting = NSHostingView(
+            rootView: pillsView.frame(width: NotchMetrics.contentWidth)
+        )
+        constrainedHosting.frame = NSRect(x: 0, y: 0, width: NotchMetrics.contentWidth, height: 100)
+        constrainedHosting.layoutSubtreeIfNeeded()
+        let notchFittingSize = constrainedHosting.fittingSize
+
+        let narrowHosting = NSHostingView(
+            rootView: pillsView.frame(width: 280)
+        )
+        narrowHosting.frame = NSRect(x: 0, y: 0, width: 280, height: 100)
+        narrowHosting.layoutSubtreeIfNeeded()
+        let narrowFittingSize = narrowHosting.fittingSize
+
+        // 1. Height must match a single-line pill row (no multi-line wrapping of 'Imágenes', 'Archivos', or 'Fijados 📌')
+        #expect(abs(notchFittingSize.height - expectedSingleLineHeight) <= 2.0)
+        #expect(notchFittingSize.height <= 28.0)
+
+        // 2. Narrower container does not cause wrapping or change the bar's fixed vertical height
+        #expect(abs(notchFittingSize.height - narrowFittingSize.height) <= 0.5)
+
+        // 3. Height stays identical regardless of which filter is selected
+        for filter in ClipboardContentFilter.allCases {
+            let filterHosting = NSHostingView(
+                rootView: ClipboardFilterPillsView(selection: filter, onSelect: { _ in })
+                    .frame(width: NotchMetrics.contentWidth)
+            )
+            filterHosting.frame = NSRect(x: 0, y: 0, width: NotchMetrics.contentWidth, height: 100)
+            filterHosting.layoutSubtreeIfNeeded()
+            #expect(abs(filterHosting.fittingSize.height - notchFittingSize.height) <= 0.5)
+        }
+
+        // 4. Verify the view hierarchy contains an NSScrollView configured for horizontal scrolling without visible scrollers
+        func findScrollView(in view: NSView) -> NSScrollView? {
+            if let scroll = view as? NSScrollView {
+                return scroll
+            }
+            for subview in view.subviews {
+                if let found = findScrollView(in: subview) {
+                    return found
+                }
+            }
+            return nil
+        }
+
+        let scrollView = try #require(findScrollView(in: constrainedHosting))
+        #expect(scrollView.hasHorizontalScroller == false)
+        #expect(scrollView.hasVerticalScroller == false)
+
+        // 5. Verify pill titles match expected single-line strings and callback selection works
+        #expect(pillsView.pillTitle(for: .images) == "Imágenes")
+        #expect(pillsView.pillTitle(for: .pinned) == "Fijados 📌")
+        pillsView.onSelect(.images)
+        #expect(selectedFilter == .images)
+    }
 }
