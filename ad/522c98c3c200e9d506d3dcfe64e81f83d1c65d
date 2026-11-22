@@ -1,0 +1,28 @@
+Sources/NotchTubeAudio/App/AppEnvironment.swift
+  h_c714c5d6d16f81 42-43,82-83,91-95
+Sources/NotchTubeAudio/Models/ClipboardItem.swift
+  h_c714c5d6d16f81 1-138
+Sources/NotchTubeAudio/Models/ClipboardPayload.swift
+  h_c714c5d6d16f81 1-146
+Sources/NotchTubeAudio/Services/ClipboardMonitor.swift
+  h_c714c5d6d16f81 9-10,19,22-24,26-27,33-36,38-40,46-47,66,68-75,78-81,86-92,95-99,103-149,151-158,160-204
+Sources/NotchTubeAudio/Services/PasteboardReader.swift
+  h_c714c5d6d16f81 1-102
+Sources/NotchTubeAudio/Settings/SettingsManager.swift
+  h_c714c5d6d16f81 29,65-70,114
+Sources/NotchTubeAudio/State/AppState.swift
+  h_c714c5d6d16f81 55-65,71-81
+Tests/NotchTubeAudioTests/ClipboardMonitorTests.swift
+  h_c714c5d6d16f81 1-303
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.6",
+  "base_commit_sha": "ad522c98c3c200e9d506d3dcfe64e81f83d1c65d",
+  "prompts": {},
+  "humans": {
+    "h_c714c5d6d16f81": {
+      "author": "roicastrocasal <roicc@inditex.com>"
+    }
+  }
+}
