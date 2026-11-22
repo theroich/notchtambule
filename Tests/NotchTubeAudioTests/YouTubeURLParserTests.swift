@@ -3,6 +3,7 @@
 //  NotchTubeAudioTests
 //
 
+import Foundation
 import Testing
 @testable import NotchTubeAudio
 
@@ -51,5 +52,35 @@ struct YouTubeURLParserTests {
         #expect(oembed.hasPrefix("https://www.youtube.com/oembed?"))
         #expect(oembed.contains("dQw4w9WgXcQ"))
         #expect(oembed.contains("format=json"))
+    }
+
+    @MainActor
+    @Test func pluginCanHandleMatchesURLAndTextPayloadsWithValidYouTubeLinks() throws {
+        let suiteName = "notchtube.ytparser.plugin.\(UUID().uuidString)"
+        let defaults = try #require(UserDefaults(suiteName: suiteName))
+        defer { defaults.removePersistentDomain(forName: suiteName) }
+
+        let settings = SettingsManager(defaults: defaults)
+        let plugin = YouTubeAudioFeaturePlugin(settings: settings)
+
+        #expect(plugin.id == "com.notchclip.plugin.youtube-audio")
+        #expect(plugin.displayName == "YouTube Audio")
+        #expect(plugin.iconSystemName == "waveform.badge.mic")
+        #expect(plugin.priority == .high)
+        #expect(plugin.defaultTriggerBehavior == .automaticPrompt)
+
+        let ytURL = try #require(URL(string: "https://www.youtube.com/watch?v=dQw4w9WgXcQ"))
+        let urlItem = ClipboardItem(changeCount: 1, payload: .url(ytURL, rawText: ytURL.absoluteString))
+        let textYTItem = ClipboardItem(changeCount: 2, payload: .text("https://youtu.be/dQw4w9WgXcQ"))
+        let nonYTURL = try #require(URL(string: "https://example.com/watch?v=dQw4w9WgXcQ"))
+        let nonYTURLItem = ClipboardItem(changeCount: 3, payload: .url(nonYTURL, rawText: nonYTURL.absoluteString))
+        let plainTextItem = ClipboardItem(changeCount: 4, payload: .text("Texto normal sin enlace"))
+        let filesItem = ClipboardItem(changeCount: 5, payload: .files([URL(fileURLWithPath: "/tmp/file.mp3")]))
+
+        #expect(plugin.canHandle(urlItem) == true)
+        #expect(plugin.canHandle(textYTItem) == true)
+        #expect(plugin.canHandle(nonYTURLItem) == false)
+        #expect(plugin.canHandle(plainTextItem) == false)
+        #expect(plugin.canHandle(filesItem) == false)
     }
 }

@@ -14,6 +14,7 @@ final class AppEnvironment {
 
     let settings: SettingsManager
     let downloadManager: DownloadManager
+    let youtubePlugin: YouTubeAudioFeaturePlugin
     let historyStore: ClipboardHistoryStore
     let featureRegistry: FeatureRegistry
     let appState: AppState
@@ -25,12 +26,19 @@ final class AppEnvironment {
     private init() {
         let settings = SettingsManager()
         let downloads = DownloadManager(settings: settings)
+        let youtubePlugin = YouTubeAudioFeaturePlugin(
+            settings: settings,
+            downloadManager: downloads
+        )
         let clipboard = ClipboardMonitor(settings: settings)
         let historyStore = ClipboardHistoryStore(
             settings: settings,
             clipboardMonitor: clipboard
         )
-        let featureRegistry = FeatureRegistry(settings: settings)
+        let featureRegistry = FeatureRegistry(
+            settings: settings,
+            plugins: [youtubePlugin]
+        )
         let appState = AppState(
             settings: settings,
             historyStore: historyStore,
@@ -40,6 +48,7 @@ final class AppEnvironment {
 
         self.settings = settings
         self.downloadManager = downloads
+        self.youtubePlugin = youtubePlugin
         self.historyStore = historyStore
         self.featureRegistry = featureRegistry
         self.appState = appState

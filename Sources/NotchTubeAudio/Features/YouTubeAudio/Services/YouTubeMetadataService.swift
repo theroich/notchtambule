@@ -16,8 +16,13 @@ struct YouTubeMetadata: Equatable, Sendable {
     let thumbnailURL: URL?
 }
 
+/// Contract for resolving video metadata (oEmbed in production, deterministic stubs in tests).
+protocol YouTubeMetadataFetching: Sendable {
+    func metadata(for link: YouTubeLink) async -> YouTubeMetadata?
+}
+
 /// Stateless, `Sendable` network client for oEmbed.
-final class YouTubeMetadataService: Sendable {
+final class YouTubeMetadataService: YouTubeMetadataFetching, Sendable {
     private struct OEmbedResponse: Decodable {
         let title: String
         let authorName: String?

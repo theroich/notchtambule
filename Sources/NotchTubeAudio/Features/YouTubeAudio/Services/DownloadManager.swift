@@ -48,9 +48,16 @@ final class DownloadManager {
     }
 
     func enqueue(video: DetectedVideo, format: AudioFormat) {
+        isShuttingDown = false
         let item = DownloadItem(video: video, format: format)
         items.insert(item, at: 0)
         Log.downloads.info("Encolada descarga \(item.id.uuidString, privacy: .public) (\(format.rawValue, privacy: .public))")
+        startNextIfPossible()
+    }
+
+    /// Re-enables scheduling after the plugin is started or re-enabled.
+    func resumeAcceptingDownloads() {
+        isShuttingDown = false
         startNextIfPossible()
     }
 
@@ -95,9 +102,9 @@ final class DownloadManager {
             run.terminate()
         }
         running.removeAll()
-        for item in items where item.status == .queued {
+        for item in items where item.status.isActive {
             item.status = .cancelled
-            item.finishedAt = Date()
+            item.finishedAt = item.finishedAt ?? Date()
         }
         Log.downloads.info("Procesos de descarga terminados")
     }

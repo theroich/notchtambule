@@ -129,6 +129,182 @@ struct DownloadManagerTests {
         #expect(item.errorMessage?.contains("brew upgrade yt-dlp") == true)
         #expect(context.attempts == 2, "no debe reintentar indefinidamente")
     }
+
+    // MARK: - YouTubeAudioFeaturePlugin Integration Tests
+
+    @Test func pluginPromptResolvesOEmbedEnqueuesDownloadAndSwitchesToActivityPanel() async throws {
+        let context = try TestContext()
+        defer { context.cleanup() }
+
+        let expectedThumb = try #require(URL(string: "https://i.ytimg.com/vi/dQw4w9WgXcQ/maxresdefault.jpg"))
+        let stubMetadata = StubMetadataService(
+            result: YouTubeMetadata(
+                title: "Fake Song",
+                authorName: "Rick Astley",
+                thumbnailURL: expectedThumb
+            )
+        )
+        let manager = DownloadManager(settings: context.settings)
+        let plugin = YouTubeAudioFeaturePlugin(
+            settings: context.settings,
+            downloadManager: manager,
+            metadataService: stubMetadata
+        )
+
+        let ytURL = try #require(URL(string: "https://www.youtube.com/watch?v=dQw4w9WgXcQ"))
+        let clipboardItem = ClipboardItem(
+            changeCount: 1,
+            payload: .url(ytURL, rawText: ytURL.absoluteString)
+        )
+
+        let actionContext = FeatureActionContext.noop
+        var completed = false
+
+        let promptView = plugin.makePromptView(
+            for: clipboardItem,
+            context: actionContext,
+            onComplete: { completed = true },
+            onDismiss: {}
+        )
+        #expect(promptView != nil)
+        #expect(plugin.detectedVideo?.videoID == "dQw4w9WgXcQ")
+
+        let metadataResolved = await context.wait(timeout: 3) {
+            plugin.detectedVideo?.isLoading == false
+        }
+        #expect(metadataResolved)
+        #expect(plugin.detectedVideo?.title == "Fake Song")
+        #expect(plugin.detectedVideo?.authorName == "Rick Astley")
+        #expect(plugin.detectedVideo?.thumbnailURL == expectedThumb)
+
+        // User selects MP3 and presses "Guardar audio"
+        plugin.promptFormat = .mp3
+        plugin.confirmPromptDownload(context: actionContext) {
+            completed = true
+        }
+
+        #expect(completed)
+        #expect(actionContext.lastSwitchedActivityPluginID == plugin.id)
+        #expect(plugin.detectedVideo == nil)
+        #expect(manager.items.count == 1)
+
+        let downloadItem = try #require(manager.items.first)
+        let finished = await context.wait(timeout: 8) {
+            downloadItem.status == .completed
+        }
+        #expect(finished, "estado: \(downloadItem.status), error: \(downloadItem.errorMessage ?? "nil")")
+        #expect(downloadItem.outputFileURL?.lastPathComponent == "Fake Song.mp3")
+        #expect(downloadItem.canReveal == true)
+    }
+
+    @Test func quickActionsEnqueueMP3AndWAVDirectlyFromHistory() async throws {
+        let context = try TestContext()
+        defer { context.cleanup() }
+
+        let stubMetadata = StubMetadataService(
+            result: YouTubeMetadata(
+                title: "Fake Song",
+                authorName: "Autor",
+                thumbnailURL: nil
+            )
+        )
+        let manager = DownloadManager(settings: context.settings)
+        let plugin = YouTubeAudioFeaturePlugin(
+            settings: context.settings,
+            downloadManager: manager,
+            metadataService: stubMetadata
+        )
+
+        let ytURL = try #require(URL(string: "https://youtu.be/dQw4w9WgXcQ"))
+        let clipboardItem = ClipboardItem(
+            changeCount: 1,
+            payload: .url(ytURL, rawText: ytURL.absoluteString)
+        )
+
+        let actionContext = FeatureActionContext.noop
+        let actions = plugin.quickActions(for: clipboardItem, context: actionContext)
+        #expect(actions.count == 2)
+        #expect(actions[0].title == "Descargar MP3")
+        #expect(actions[0].iconSystemName == "arrow.down.circle")
+        #expect(actions[1].title == "Descargar WAV")
+        #expect(actions[1].iconSystemName == "waveform")
+
+        // Trigger "Descargar WAV" quick action from clipboard history
+        actions[1].handler()
+        #expect(manager.items.count == 1)
+        #expect(manager.items.first?.format == .wav)
+        #expect(actionContext.lastSwitchedActivityPluginID == plugin.id)
+
+        // Trigger "Descargar MP3" quick action
+        actions[0].handler()
+        #expect(manager.items.count == 2)
+        #expect(manager.items.first?.format == .mp3)
+
+        manager.terminateAllProcesses()
+    }
+
+    @Test func disablingYouTubePluginStoresURLInHistoryWithoutOpeningPromptAndTerminatesProcesses() async throws {
+        let context = try TestContext(
+            script: "#!/bin/sh\necho '  1.0%'\nwhile true; do sleep 0.2; echo '  2.0%'; done\n"
+        )
+        defer { context.cleanup() }
+
+        let tempStorageDir = context.root.appendingPathComponent("history", isDirectory: true)
+        context.settings.persistClipboardHistory = false
+        let storage = ClipboardStorage(baseDirectory: tempStorageDir, debounceInterval: 0)
+        let pasteboard = MockPasteboard()
+        let historyStore = ClipboardHistoryStore(
+            settings: context.settings,
+            storage: storage,
+            pasteboard: pasteboard
+        )
+
+        let manager = DownloadManager(settings: context.settings)
+        let plugin = YouTubeAudioFeaturePlugin(
+            settings: context.settings,
+            downloadManager: manager,
+            metadataService: StubMetadataService(result: nil)
+        )
+        let registry = FeatureRegistry(settings: context.settings, plugins: [plugin])
+        let appState = AppState(
+            settings: context.settings,
+            historyStore: historyStore,
+            featureRegistry: registry
+        )
+
+        // Start a download and verify activeTasksCount reflects DownloadManager.activeCount
+        let runningItem = try manager.enqueueForTesting(title: "Running", format: .mp3)
+        #expect(await context.wait(timeout: 3) { runningItem.status == .downloading })
+        #expect(plugin.activeTasksCount == 1)
+        #expect(plugin.hasActivityPanel == true)
+        #expect(plugin.makeActivityPanelView(context: appState.actionContext) != nil)
+        #expect(plugin.makeSettingsView() != nil)
+
+        // Disable plugin in FeatureRegistry -> invokes plugin.shutdown(), terminating running processes
+        registry.setPluginEnabled(plugin.id, false)
+        #expect(plugin.activeTasksCount == 0)
+
+        // Now copy a YouTube link while plugin is disabled: saved as URL in history, no prompt opened
+        let ytURL = try #require(URL(string: "https://www.youtube.com/watch?v=dQw4w9WgXcQ"))
+        let copiedItem = ClipboardItem(
+            changeCount: 10,
+            payload: .url(ytURL, rawText: ytURL.absoluteString)
+        )
+        appState.handleCapturedItem(copiedItem)
+
+        #expect(historyStore.items.count == 1)
+        #expect(historyStore.items.first?.contentType == .url)
+        #expect(historyStore.items.first?.detectedFeatureIDs.isEmpty == true)
+        #expect(appState.notchMode == .idle)
+    }
+}
+
+private struct StubMetadataService: YouTubeMetadataFetching {
+    let result: YouTubeMetadata?
+
+    func metadata(for link: YouTubeLink) async -> YouTubeMetadata? {
+        result
+    }
 }
 
 // MARK: - Test helpers
