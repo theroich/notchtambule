@@ -38,6 +38,8 @@ protocol ClipboardFeaturePlugin: AnyObject, Identifiable {
     var priority: FeaturePriority { get }
     /// Comportamiento por defecto al copiar.
     var defaultTriggerBehavior: FeatureTriggerBehavior { get }
+    /// Indica si el módulo ofrece un prompt proactivo en el notch al copiar contenido compatible.
+    var supportsPrompt: Bool { get }
 
     /// Ciclo de vida
     func start()
@@ -69,6 +71,7 @@ protocol ClipboardFeaturePlugin: AnyObject, Identifiable {
 extension ClipboardFeaturePlugin {
     var priority: FeaturePriority { .normal }
     var defaultTriggerBehavior: FeatureTriggerBehavior { .historyActionOnly }
+    var supportsPrompt: Bool { defaultTriggerBehavior == .automaticPrompt }
 
     func start() {}
     func shutdown() {}

@@ -21,6 +21,7 @@ final class YouTubeAudioFeaturePlugin: ClipboardFeaturePlugin {
     let iconSystemName: String = "waveform.badge.mic"
     let priority: FeaturePriority = .high
     let defaultTriggerBehavior: FeatureTriggerBehavior = .automaticPrompt
+    let supportsPrompt: Bool = true
 
     let settings: SettingsManager
     let downloadManager: DownloadManager
