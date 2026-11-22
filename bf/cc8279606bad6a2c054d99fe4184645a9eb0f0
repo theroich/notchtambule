@@ -1,0 +1,26 @@
+Sources/NotchTubeAudio/App/AppEnvironment.swift
+  h_c714c5d6d16f81 17-18,28-33,36-37,43-44,51,60,88,91,95
+Sources/NotchTubeAudio/Models/NotchMode.swift
+  h_c714c5d6d16f81 8-15,18,21-32,34-39
+Sources/NotchTubeAudio/Services/NotchController.swift
+  h_c714c5d6d16f81 143,165,184-185,187,288,293,301,344,360,376,411-413,417-439
+Sources/NotchTubeAudio/State/AppState.swift
+  h_c714c5d6d16f81 13,15,18,23-31,36-41,44-65,69-70,73-74,79,81-90,92-94,96-98,102-105,107,109-114,116-117,120-125,127-134,137,139,144,149-170,173-175,177-185,189-198,200,204,210,215-251,255-257
+Sources/NotchTubeAudio/Views/DownloadQueueView.swift
+  h_c714c5d6d16f81 10-14,17
+Sources/NotchTubeAudio/Views/NotchRootView.swift
+  h_c714c5d6d16f81 19-20,22-23,31-359
+Tests/NotchTubeAudioTests/AppStateOrchestrationTests.swift
+  h_c714c5d6d16f81 1-382
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.6",
+  "base_commit_sha": "bfcc8279606bad6a2c054d99fe4184645a9eb0f0",
+  "prompts": {},
+  "humans": {
+    "h_c714c5d6d16f81": {
+      "author": "roicastrocasal <roicc@inditex.com>"
+    }
+  }
+}
