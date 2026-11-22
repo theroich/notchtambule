@@ -15,6 +15,9 @@ final class AppEnvironment {
     let settings: SettingsManager
     let downloadManager: DownloadManager
     let youtubePlugin: YouTubeAudioFeaturePlugin
+    let urlCleanerPlugin: URLCleanerFeaturePlugin
+    let jsonFormatterPlugin: JSONFormatterFeaturePlugin
+    let colorConverterPlugin: ColorConverterFeaturePlugin
     let historyStore: ClipboardHistoryStore
     let featureRegistry: FeatureRegistry
     let appState: AppState
@@ -30,6 +33,9 @@ final class AppEnvironment {
             settings: settings,
             downloadManager: downloads
         )
+        let urlCleanerPlugin = URLCleanerFeaturePlugin()
+        let jsonFormatterPlugin = JSONFormatterFeaturePlugin()
+        let colorConverterPlugin = ColorConverterFeaturePlugin()
         let clipboard = ClipboardMonitor(settings: settings)
         let historyStore = ClipboardHistoryStore(
             settings: settings,
@@ -37,7 +43,12 @@ final class AppEnvironment {
         )
         let featureRegistry = FeatureRegistry(
             settings: settings,
-            plugins: [youtubePlugin]
+            plugins: [
+                youtubePlugin,
+                urlCleanerPlugin,
+                jsonFormatterPlugin,
+                colorConverterPlugin
+            ]
         )
         let appState = AppState(
             settings: settings,
@@ -49,6 +60,9 @@ final class AppEnvironment {
         self.settings = settings
         self.downloadManager = downloads
         self.youtubePlugin = youtubePlugin
+        self.urlCleanerPlugin = urlCleanerPlugin
+        self.jsonFormatterPlugin = jsonFormatterPlugin
+        self.colorConverterPlugin = colorConverterPlugin
         self.historyStore = historyStore
         self.featureRegistry = featureRegistry
         self.appState = appState

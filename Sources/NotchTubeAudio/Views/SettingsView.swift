@@ -54,7 +54,12 @@ struct SettingsView: View {
     init(settings: SettingsManager) {
         let defaultRegistry = FeatureRegistry(
             settings: settings,
-            plugins: [YouTubeAudioFeaturePlugin(settings: settings)]
+            plugins: [
+                YouTubeAudioFeaturePlugin(settings: settings),
+                URLCleanerFeaturePlugin(),
+                JSONFormatterFeaturePlugin(),
+                ColorConverterFeaturePlugin()
+            ]
         )
         self.init(
             settings: settings,

@@ -1,16 +1,175 @@
-# NotchTubeAudio
+# NotchTubeAudio (NotchClip)
 
-Aplicación nativa de macOS que vive en la barra de menús y utiliza el notch de la cámara para descargar el audio de enlaces de YouTube.
+**Gestor del Portapapeles en el Notch para macOS con Arquitectura Modular de Plugins (`ClipboardFeaturePlugin` + `FeatureRegistry`).**
 
-Copia un enlace (`youtube.com/watch`, `youtu.be`, `shorts`, `music.youtube.com`…) y el notch mostrará al instante la miniatura, el título y el canal, con la opción de guardarlo como **MP3** o **WAV**. Al acercar el cursor al notch aparece la cola de descargas con el progreso en tiempo real y un acceso directo al archivo en Finder.
+Aplicación nativa de macOS que vive en la barra de menús y convierte el notch de la cámara en un **centro inteligente del portapapeles** con historial persistente, búsqueda instantánea, filtros por tipo, fijado de elementos (*pin*) y un ecosistema extensible de **módulos independientes**.
+
+Cada vez que copias texto, enlaces, archivos, colores, JSON o imágenes:
+1. El elemento se registra automáticamente en el historial del portapapeles (con deduplicación SHA-256 y exclusión automática de contraseñas/datos confidenciales).
+2. El catálogo central (`FeatureRegistry`) evalúa los plugins habilitados por orden de prioridad.
+3. Si un módulo activo está configurado con aviso automático (`.automaticPrompt`, como **YouTube Audio**), el notch se despliega al instante con su interfaz interactiva.
+4. Al acercar el cursor al notch aparece el panel con pestañas dinámicas (**Portapapeles** y paneles de actividad como **Descargas**), donde cada fila muestra las **acciones rápidas** (`quickActions`) de todos los módulos compatibles.
 
 ```
-┌────────────────────────────── notch ──────────────────────────────┐
-│  [miniatura]  Título del vídeo                                    │
-│               Canal · 24,3 s                                      │
-│  ( MP3 ) ( WAV )                              ( X )  Guardar audio │
-└───────────────────────────────────────────────────────────────────┘
+┌────────────────────────────────── notch ──────────────────────────────────┐
+│  [📋 Portapapeles (12)]   [🎵 YouTube Audio · 1]                          │
+│  🔍 Buscar en el portapapeles…   [Todo] [Texto] [Enlaces] [Archivos] [📌] │
+│  ───────────────────────────────────────────────────────────────────────  │
+│  🔗 youtube.com/watch?v=dQw4w9WgXcQ&utm_source=share                      │
+│     [⬇️ MP3] [〰️ WAV] [✨ Limpiar URL]                       [📌] [📋] [✕] │
+│  { } {"user":"ada","roles":["admin"]}                                     │
+│     [{} Prettify JSON] [↘↖ Minify JSON]                      [📌] [📋] [✕] │
+│  🎨 #FF5733                                                               │
+│     [🎨 RGB] [# HEX] [🐦 SwiftUI Color]                      [📌] [📋] [✕] │
+└───────────────────────────────────────────────────────────────────────────┘
 ```
+
+---
+
+## Módulos Integrados (Built-in Plugins)
+
+Todos los módulos implementan el protocolo `ClipboardFeaturePlugin` y pueden activarse, desactivarse o cambiar su modo de disparo (`.automaticPrompt` vs `.historyActionOnly`) desde **Ajustes → Módulos (`⌘,`)**:
+
+| Módulo | ID | Prioridad | Disparo por defecto | Qué hace |
+|---|---|---|---|---|
+| **YouTube Audio** (`YouTubeAudioFeaturePlugin`) | `com.notchclip.plugin.youtube-audio` | `.high` | `.automaticPrompt` | Detecta enlaces de YouTube (`watch`, `youtu.be`, `shorts`, `music`), resuelve título/canal/miniatura vía oEmbed, muestra prompt MP3/WAV en el notch y gestiona la cola de descargas con `yt-dlp` y `ffmpeg`. |
+| **Limpiador de URLs** (`URLCleanerFeaturePlugin`) | `com.notchclip.plugin.url-cleaner` | `.normal` | `.historyActionOnly` | Detecta enlaces con parámetros de rastreo (`utm_*`, `fbclid`, `gclid`, `igshid`, `si`, `mc_eid`, `_hsenc`, `mkt_tok`, etc.) y permite limpiarlos preservando los query params legítimos. |
+| **Formateador JSON** (`JSONFormatterFeaturePlugin`) | `com.notchclip.plugin.json-formatter` | `.normal` | `.historyActionOnly` | Detecta documentos JSON válidos (`{...}` o `[...]`) y expone acciones rápidas para **Prettify JSON** (2 espacios, claves ordenadas) y **Minify JSON** (una línea compacta). |
+| **Conversor de Color** (`ColorConverterFeaturePlugin`) | `com.notchclip.plugin.color-converter` | `.low` | `.historyActionOnly` | Detecta colores en texto (`#RGB`, `#RRGGBB`, `#RRGGBBAA`, `rgb(r, g, b)`) y los convierte con un clic a **RGB**, **HEX** o **SwiftUI `Color`**. |
+
+---
+
+## Arquitectura
+
+### Diagrama de Flujo del Sistema
+
+```
+NSPasteboard.general
+        │
+        ▼ (Timer 0.6s · changeCount + filtro confidencial)
+ClipboardMonitor ──(ClipboardItem)──▶ AppState (Orquestador @MainActor)
+                                         │
+                   ┌─────────────────────┴─────────────────────┐
+                   ▼                                           ▼
+        ClipboardHistoryStore                           FeatureRegistry
+   (Deduplicación SHA-256, Pinning,              (Catálogo y Router de Plugins)
+    Búsqueda, Filtros, Persistencia JSON)                      │
+                                                               ▼
+                                                 [any ClipboardFeaturePlugin]
+                                                 ├── YouTubeAudioFeaturePlugin (.high)
+                                                 ├── URLCleanerFeaturePlugin   (.normal)
+                                                 ├── JSONFormatterFeaturePlugin(.normal)
+                                                 └── ColorConverterFeaturePlugin(.low)
+```
+
+### Estructura de Directorios
+
+```
+Sources/NotchTubeAudio/
+├── App/
+│   ├── NotchTubeAudioApp.swift          # @main, MenuBarExtra + Settings scene
+│   ├── AppDelegate.swift                # ciclo de vida AppKit, activación accessory
+│   └── AppEnvironment.swift             # composition root (registra plugins y servicios)
+├── Features/
+│   ├── ClipboardFeaturePlugin.swift     # protocolo base de plugins + prioridades + trigger behaviors
+│   ├── FeatureModels.swift              # FeatureQuickAction, FeatureActionContext, notificaciones
+│   ├── FeatureRegistry.swift            # catálogo observable, ciclo de vida y enrutamiento por prioridad
+│   ├── YouTubeAudio/                    # módulo completo de descarga de audio de YouTube
+│   ├── URLCleaner/
+│   │   └── URLCleanerFeaturePlugin.swift
+│   ├── JSONFormatter/
+│   │   └── JSONFormatterFeaturePlugin.swift
+│   └── ColorConverter/
+│       └── ColorConverterFeaturePlugin.swift
+├── Models/
+│   ├── ClipboardItem.swift              # modelo universal con metadatos, app origen y detectedFeatureIDs
+│   ├── ClipboardPayload.swift           # .text, .url, .files, .image + clasificación semántica
+│   └── NotchMode.swift                  # .idle | .promptingFeature | .showingPanel(tab:)
+├── State/
+│   └── AppState.swift                   # orquestador entre historial, plugins y presentación del notch
+├── Services/
+│   ├── ClipboardMonitor.swift           # monitor universal de NSPasteboard + exclusión confidencial
+│   ├── PasteboardReader.swift           # abstracción testeable del portapapeles de macOS
+│   ├── ClipboardHistoryStore.swift      # motor de historial en memoria + búsqueda, filtros y fijados
+│   ├── ClipboardStorage.swift           # persistencia atómica en Application Support + blobs de imagen
+│   ├── NotchController.swift            # DynamicNotchKit + monitor global/local de proximidad del ratón
+│   ├── NotchGeometry.swift              # cálculo de trigger zone y retention zone
+│   ├── BinaryLocator.swift              # validación y autodetección de yt-dlp y ffmpeg
+│   └── LineAccumulator.swift            # acumulador thread-safe de líneas de stdout/stderr
+├── Settings/
+│   └── SettingsManager.swift            # preferencias globales + estado por plugin en UserDefaults
+├── Views/
+│   ├── NotchRootView.swift              # contenedor raíz del notch (prompts + pestañas dinámicas)
+│   ├── NotchHeaderTabsView.swift        # barra de pestañas en el notch (Portapapeles + Actividad)
+│   ├── MenuBarContent.swift             # menú desplegable con últimos ítems copiados y acciones rápidas
+│   ├── SettingsView.swift               # ventana de Ajustes modular (Portapapeles y General | Módulos)
+│   ├── Clipboard/                       # ClipboardHistoryView, filas, badges de plugins y filtros
+│   └── Settings/                        # PluginsSettingsTabView
+└── Utilities/
+    ├── FileActions.swift
+    └── Logging.swift
+```
+
+---
+
+## Cómo implementar una nueva funcionalidad (`ClipboardFeaturePlugin`)
+
+La arquitectura está diseñada para que añadir una nueva herramienta al portapapeles **no requiera modificar `AppState`, `ClipboardMonitor`, `ClipboardHistoryView` ni `SettingsView`**.
+
+### Paso 1: Crear el plugin implementando `ClipboardFeaturePlugin`
+
+Crea un archivo en `Sources/NotchTubeAudio/Features/MiPlugin/UppercaseFeaturePlugin.swift` (plantilla mínima de ~40 líneas):
+
+```swift
+import Foundation
+import SwiftUI
+
+@MainActor
+final class UppercaseFeaturePlugin: ClipboardFeaturePlugin {
+    let id = "com.notchclip.plugin.uppercase"
+    let displayName = "Convertir a Mayúsculas"
+    let summary = "Transforma cualquier texto copiado a mayúsculas con un clic desde el historial."
+    let iconSystemName = "textformat.abc"
+    let priority: FeaturePriority = .low
+    let defaultTriggerBehavior: FeatureTriggerBehavior = .historyActionOnly
+
+    func canHandle(_ item: ClipboardItem) -> Bool {
+        guard case .text(let text) = item.payload else { return false }
+        let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
+        return !trimmed.isEmpty && trimmed != trimmed.uppercased()
+    }
+
+    func quickActions(for item: ClipboardItem, context: FeatureActionContext) -> [FeatureQuickAction] {
+        guard case .text(let text) = item.payload else { return [] }
+        return [
+            FeatureQuickAction(
+                id: "\(id).upper.\(item.id.uuidString)",
+                pluginID: id,
+                title: "MAYÚSCULAS",
+                iconSystemName: "textformat.abc"
+            ) {
+                context.writeToClipboard(.text(text.uppercased()))
+                context.notifyUser(message: "Texto en mayúsculas copiado", icon: "textformat.abc")
+            }
+        ]
+    }
+}
+```
+
+### Paso 2: Registrarlo en `AppEnvironment.swift` en 1 línea
+
+En `Sources/NotchTubeAudio/App/AppEnvironment.swift`, registra tu nuevo módulo en `featureRegistry`:
+
+```swift
+featureRegistry.register(UppercaseFeaturePlugin())
+```
+
+¡Listo! Al registrarlo:
+- Aparecerá automáticamente en **Ajustes → Módulos** con su interruptor de activación.
+- Cuando el usuario copie un ítem compatible (`canHandle(_:) == true`), la fila del historial en el notch mostrará su badge y sus botones de `quickActions`.
+- Si además implementas `makePromptView(for:context:onComplete:onDismiss:)`, el usuario podrá elegir en Ajustes si desea abrir un prompt automático en el notch al copiar.
+- Si el plugin gestiona tareas en segundo plano (`hasActivityPanel = true` y `makeActivityPanelView(context:)`), el notch añadirá automáticamente una pestaña de actividad con contador en tiempo real.
+- Si necesita preferencias propias, implementa `makeSettingsView()` y se incrustará dinámicamente en la tarjeta del módulo dentro de Ajustes.
 
 ---
 
@@ -20,17 +179,15 @@ Copia un enlace (`youtube.com/watch`, `youtu.be`, `shorts`, `music.youtube.com`�
 |---|---|
 | macOS | 14.0 Sonoma o superior |
 | Xcode | 16 o superior. **No basta con Command Line Tools**: DynamicNotchKit usa el macro `@Entry` de SwiftUI y su plugin se instala con Xcode. |
-| Swift | 6.0 (incluido en Xcode 16) |
-| [yt-dlp](https://github.com/yt-dlp/yt-dlp) | `brew install yt-dlp` |
-| [ffmpeg](https://ffmpeg.org) | `brew install ffmpeg` |
+| Swift | 6.0 (incluido en Xcode 16, strict concurrency checking habilitado) |
+| [yt-dlp](https://github.com/yt-dlp/yt-dlp) | `brew install yt-dlp` *(opcional, requerido solo por el módulo YouTube Audio)* |
+| [ffmpeg](https://ffmpeg.org) | `brew install ffmpeg` *(opcional, requerido solo por el módulo YouTube Audio)* |
 
-La app no está sandboxeada (`com.apple.security.app-sandbox = false`) para poder lanzar `Process` con yt-dlp/ffmpeg y escribir directamente en el sistema de archivos.
+La app no está sandboxeada (`com.apple.security.app-sandbox = false`) para que el módulo de YouTube Audio pueda lanzar `Process` con `yt-dlp`/`ffmpeg` y escribir en la carpeta de descargas seleccionada.
 
 ---
 
 ## Compilar y ejecutar
-
-Hay dos caminos equivalentes.
 
 ### 1. Script de build (recomendado)
 
@@ -52,203 +209,36 @@ El script compila el ejecutable, crea `build/NotchTubeAudio.app` con el `Info.pl
 1. `File > Open…` y selecciona `Package.swift`.
 2. Elige el esquema **NotchTubeAudio** y pulsa Run.
 
-Al ejecutar desde Xcode el binario no va dentro de un `.app` bundle, por lo que `LSUIElement` no se aplica; la app fuerza igualmente `NSApp.setActivationPolicy(.accessory)` al arrancar. Para distribuirla o para que aparezca correctamente en Ajustes del Sistema, usa el script y el bundle.
-
-La dependencia está fijada a DynamicNotchKit `1.1.x` (`Package.resolved` incluido) para que una futura versión no rompa la API.
-
 ### Tests
 
 ```bash
 swift test
 ```
 
-La suite no toca la red: sustituye `yt-dlp` por un script temporal y verifica la validación de URLs, el parseo de `stdout` (incluido el formato real de progreso `45.3%`), la acumulación de líneas del `Pipe`, la cola de descargas, la cancelación y la persistencia de ajustes.
-
-### Configurar un target de app en Xcode (alternativa)
-
-Si prefieres un proyecto `.xcodeproj` clásico:
-
-1. Crea una app macOS 14+ con SwiftUI.
-2. Borra el `@main` generado y añade todo `Sources/NotchTubeAudio` al target.
-3. Añade el paquete `https://github.com/MrKai77/DynamicNotchKit` (`from: 1.1.0`).
-4. En *Signing & Capabilities* elimina **App Sandbox**.
-5. En *Info*, establece `Application is agent (UIElement)` = `YES` (`LSUIElement = YES`).
-6. Copia las claves del `Info.plist` de este repositorio.
-
----
-
-## Uso
-
-1. Al arrancar aparece el icono `waveform.badge.mic` en la barra de menús.
-2. Copia cualquier enlace de YouTube. El notch se expande con el prompt de descarga.
-3. Elige **MP3** o **WAV** y pulsa **Guardar audio**.
-4. Acerca el cursor a la parte superior central de la pantalla para ver la cola y el progreso.
-5. Al terminar, pulsa la lupa de la fila para revelar el archivo en Finder.
-
-Menú de la barra:
-
-- **Mostrar descargas en el notch / Ocultar panel del notch**
-- **Descargar enlace del portapapeles** (fuerza la detección, incluso con el monitor desactivado)
-- **Abrir carpeta de descargas**
-- **Configuración…** (`⌘,`)
-- **Salir de NotchTubeAudio** (`⌘Q`)
-
-### Ajustes
-
-- Carpeta de destino (`~/Downloads` por defecto) con `NSOpenPanel`.
-- Formato por defecto: MP3 o WAV.
-- Rutas de `yt-dlp` y `ffmpeg` con validación visual (verde = ejecutable, rojo = no existe) y botón **Autodetectar** (busca en `/opt/homebrew/bin`, `/usr/local/bin`, `/usr/bin` y `PATH`).
-- Activar o desactivar la escucha automática del portapapeles.
-- Tiempo de auto-ocultación del prompt: 3–15 s (8 s por defecto).
-
----
-
-## Arquitectura
-
-```
-Sources/NotchTubeAudio/
-├── App/
-│   ├── NotchTubeAudioApp.swift     # @main, MenuBarExtra + Settings scene
-│   ├── AppDelegate.swift           # ciclo de vida AppKit, activación accessory
-│   └── AppEnvironment.swift        # composition root (singleton @MainActor)
-├── State/
-│   └── AppState.swift              # @Observable: notchMode, prompt, metadata, acciones
-├── Models/
-│   ├── AudioFormat.swift           # mp3 / wav
-│   ├── DownloadStatus.swift        # queued, downloading, converting, completed, failed, cancelled
-│   ├── DownloadItem.swift          # item observable con progreso y estado
-│   ├── DetectedVideo.swift         # metadatos del prompt
-│   ├── NotchMode.swift             # idle / promptingURL / showingDownloads
-│   └── YouTubeLink.swift           # URL validada + canonical + oEmbed
-├── Services/
-│   ├── ClipboardMonitor.swift      # Timer 0.6 s sobre changeCount
-│   ├── YouTubeURLParser.swift      # Regex estricta de URLs de YouTube
-│   ├── YouTubeMetadataService.swift# oEmbed por URLSession
-│   ├── DownloadManager.swift       # cola, Process, progreso, cancelación
-│   ├── ProcessOutputParser.swift   # parseo puro de stdout de yt-dlp
-│   ├── LineAccumulator.swift       # chunks del Pipe → líneas completas
-│   ├── NotchController.swift       # DynamicNotchKit + monitor global del ratón
-│   ├── NotchGeometry.swift         # notch, trigger zone y retention zone
-│   └── BinaryLocator.swift         # validación/autodetección de binarios
-├── Settings/
-│   └── SettingsManager.swift       # UserDefaults observable
-├── Views/
-│   ├── NotchRootView.swift
-│   ├── NotchPromptView.swift
-│   ├── DownloadQueueView.swift
-│   ├── DownloadRowView.swift
-│   ├── FormatPills.swift
-│   ├── ThumbnailView.swift
-│   ├── MenuBarContent.swift
-│   └── SettingsView.swift
-└── Utilities/
-    ├── FileActions.swift
-    └── Logging.swift
-```
-
-### Flujo de estados
-
-```
-idle ──(URL copiada)──▶ promptingURL ──(Guardar)──▶ showingDownloads
- ▲                           │                            │
- │                    (X / timeout)                 (hover fuera)
- └───────────────────────────┴────────────────────────────┘
-```
-
-`AppState` no toca AppKit: notifica al `NotchController` mediante el protocolo `NotchPresenting`. Así el estado es testeable y el controlador concentra la presentación.
-
----
-
-## Detalles de implementación
-
-### Portapapeles
-
-- `Timer` de 0,6 s sobre `NSPasteboard.general.changeCount`.
-- El contenido inicial se ignora: al arrancar solo se guarda el `changeCount` actual.
-- Regex anclada, sin prosa ni varias URLs:
-  - `youtube.com/watch?v=…`, `youtu.be/…`, `/shorts/…`, `music.youtube.com/watch?v=…`, además de `/live/…` y `/embed/…`.
-- Deduplicación: se guarda el último texto visto. Copiar dos veces el mismo enlace sin copiar otra cosa entre medias no reabre el notch; copiar otra cosa y volver al enlace sí.
-
-### Metadatos
-
-`YouTubeMetadataService` consulta `https://www.youtube.com/oembed?url=…&format=json` con una `URLSession` efímera (timeout 3 s). El prompt se muestra de inmediato con la URL limpia y la miniatura `i.ytimg.com`; cuando llega oEmbed (normalmente < 200 ms) se sustituyen título y canal. Si falla, el fallback es la propia URL.
-
-### Notch y detección de proximidad
-
-`NotchController` usa `DynamicNotch` con fondo negro de la propia librería y calcula dos zonas en coordenadas de pantalla:
-
-- **trigger**: rectángulo del notch + 15 pt. Entrar abre la cola.
-- **retention**: notch expandido + 25 pt. Salir la colapsa (con 220 ms de debounce) o reinicia el temporizador del prompt.
-
-El rectángulo del notch se obtiene de `auxiliaryTopLeftArea`/`auxiliaryTopRightArea` y `safeAreaInsets.top`; en pantallas sin notch se usa un fallback centrado de 220 × 36 pt. Se registran `addGlobalMonitorForEvents` y `addLocalMonitorForEvents` para `mouseMoved`, y se recalcula todo con `NSApplication.didChangeScreenParametersNotification`. Un temporizador de seguridad a 4 Hz relee `NSEvent.mouseLocation` para que las zonas sigan funcionando cuando el cursor está sobre el propio panel transparente de la app.
-
-La pantalla de destino prioriza la que tiene notch; en su defecto, la primaria (barra de menús) o la que contiene el cursor. Los prompts se muestran en el notch integrado; el hover respeta la pantalla bajo el cursor.
-
-### Descarga
-
-Cada trabajo ejecuta:
-
-```bash
-yt-dlp \
-  --newline \
-  --no-playlist \
-  --print after_move:filepath \
-  --no-quiet \
-  --progress \
-  --no-colors \
-  -x \
-  --audio-format mp3|wav \
-  --audio-quality 0 \
-  --ffmpeg-location <ffmpeg> \
-  --progress-template "download:%(progress._percent_str)s" \
-  -o "<carpeta>/%(title)s.%(ext)s" \
-  "<url>"
-```
-
-Detalles relevantes:
-
-- `--print` implica `--quiet`; `--no-quiet` restaura el log para poder detectar `[ExtractAudio]`, y `--progress` fuerza las líneas de progreso.
-- En yt-dlp, `download:` dentro de `--progress-template` es el **tipo** de plantilla, así que la salida real es ` 45.3%`. El parser acepta tanto `download:45.3%` como `45.3%` y `[download] 45.3%`.
-- `after_move:filepath` imprime la ruta final; también se reconoce `[ExtractAudio] Destination: …`. Si no se pudiera capturar, se busca el archivo más reciente con la extensión y el título correspondientes.
-- Si el primer intento falla con **HTTP 403** (YouTube bloquea el cliente por defecto en algunos vídeos), la descarga se reencola automáticamente **una vez** con `--extractor-args "youtube:player_client=web_embedded"`. Si ese reintento también falla, la fila muestra un error accionable recomendando actualizar yt-dlp.
-- Máximo 2 descargas simultáneas; el resto queda en `queued`.
-- `SIGTERM` al cancelar y `SIGKILL` a los 2 s si el proceso sigue vivo.
-- Al cerrar la app (`NSApplication.willTerminateNotification` + `applicationWillTerminate`) se termina **todos** los procesos hijos.
-
-### Concurrencia
-
-- `AppState`, `SettingsManager`, `DownloadManager`, `NotchController`, `DownloadItem` y los monitores son `@MainActor` y usan `@Observable`.
-- La red (`URLSession`) y los procesos (`Process` + `Pipe`) son asíncronos; la lectura de los pipes ocurre en colas privadas y cada actualización se reenvía a `@MainActor`.
-- `LineAccumulator` protege el buffer con `NSLock` y es `Sendable`.
-- El proyecto compila en **Swift 6 language mode** (concurrency checking estricto).
+La suite de tests unitarios verifica sin tocar la red:
+- Captura multimodal del portapapeles y filtrado de tipos confidenciales (`org.nspasteboard.ConcealedType`, `TransientType`, `AutoGeneratedType`, gestores de contraseñas).
+- Historial del portapapeles (`ClipboardHistoryStore`), deduplicación, elementos fijados (*pinned*), límites de retención y persistencia en disco (`ClipboardStorage`).
+- Registro, prioridades, activación/desactivación y modos de disparo en `FeatureRegistry`.
+- Orquestación de `AppState` entre historial, prompts proactivos y pestañas del notch.
+- Plugins integrados (`BuiltInPluginsTests`, `YouTubeURLParserTests`, `DownloadManagerTests`, `ProcessOutputParserTests`).
+- Ventana de ajustes modular y menú de barra (`SettingsManagerTests`, `ClipboardNotchUITests`).
 
 ---
 
 ## Solución de problemas
 
 **«No se encontró yt-dlp/ffmpeg»**
-Abre Ajustes y comprueba las rutas, o pulsa Autodetectar. Si usas Mac Intel, las rutas suelen ser `/usr/local/bin/...`.
+Abre **Ajustes → Módulos → YouTube Audio** y comprueba las rutas, o pulsa **Autodetectar**. Si no necesitas descargar audio de YouTube, puedes desactivar el módulo YouTube Audio en la misma pestaña.
 
-**El progreso no aparece**
-Comprueba que la versión de yt-dlp está actualizada (`brew upgrade yt-dlp`). La salida de errores de cada descarga se muestra en la fila (`Error` + mensaje).
-
-**«HTTP 403: Forbidden» al descargar**
-YouTube suele bloquear clientes antiguos de yt-dlp. La app ya reintenta una vez con el cliente `web_embedded`, que no necesita PO token GVS. Si el reintento también falla, actualiza las herramientas:
+**«HTTP 403: Forbidden» al descargar de YouTube**
+YouTube suele bloquear clientes antiguos de `yt-dlp`. El módulo YouTube Audio reintenta automáticamente una vez con `youtube:player_client=web_embedded`. Si el reintento también falla, actualiza las herramientas:
 
 ```bash
 brew upgrade yt-dlp ffmpeg
 ```
 
-Puedes comprobar la versión con `yt-dlp --version`. En la prueba que motivó este fallback, `2026.07.04` daba 403 en un vídeo real y `2026.10.26` lo descargaba directamente sin reintento.
-
 **El notch no reacciona al hover**
-En algunas versiones de macOS los monitores globales de ratón requieren permiso de **Accesibilidad** (Ajustes del Sistema > Privacidad y seguridad > Accesibilidad). La app funciona igualmente con el ratón sobre su propio panel mediante el monitor local.
-
-**No puede escribir en la carpeta**
-macOS protege Descargas/Escritorio/Documentos. La primera vez hay que conceder acceso cuando el sistema lo pida, o elegir otra carpeta en Ajustes.
-
-**La app aparece en el Dock**
-Estás ejecutando el binario de SwiftPM/Xcode sin bundle. Usa `Scripts/build-app.sh`, que aplica `LSUIElement`.
+En algunas versiones de macOS los monitores globales de ratón requieren permiso de **Accesibilidad** (Ajustes del Sistema > Privacidad y seguridad > Accesibilidad). Siempre puedes abrir el panel desde el icono de la barra de menús.
 
 **Error al compilar: `plugin for module 'SwiftUIMacros' not found`**
 Estás usando Command Line Tools en lugar de Xcode. Ejecuta:
@@ -256,11 +246,3 @@ Estás usando Command Line Tools en lugar de Xcode. Ejecuta:
 ```bash
 sudo xcode-select -s /Applications/Xcode.app/Contents/Developer
 ```
-
----
-
-## Limitaciones conocidas
-
-- Requiere conexión a Internet y una instalación funcional de yt-dlp; YouTube puede pedir autenticación o limitar descargas según la región/vídeo.
-- La cola de descargas vive en memoria y no se restaura al reiniciar la app.
-- El proyecto está pensado para uso local; para distribuir la app fuera de tu Mac necesitarás firmarla con tu Developer ID y notarizarla.
