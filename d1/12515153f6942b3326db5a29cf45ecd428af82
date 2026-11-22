@@ -1,0 +1,28 @@
+Sources/NotchTubeAudio/App/AppEnvironment.swift
+  h_c714c5d6d16f81 17,29-32,38-41,51
+Sources/NotchTubeAudio/Features/YouTubeAudio/Services/DownloadManager.swift
+  h_c714c5d6d16f81 51,58-63,105,107
+Sources/NotchTubeAudio/Features/YouTubeAudio/Services/YouTubeMetadataService.swift
+  h_c714c5d6d16f81 19-23,25
+Sources/NotchTubeAudio/Features/YouTubeAudio/Views/YouTubeAudioSettingsView.swift
+  h_c714c5d6d16f81 1-190
+Sources/NotchTubeAudio/Features/YouTubeAudio/YouTubeAudioFeaturePlugin.swift
+  h_c714c5d6d16f81 1-268
+Sources/NotchTubeAudio/Views/SettingsView.swift
+  h_c714c5d6d16f81 15
+Tests/NotchTubeAudioTests/DownloadManagerTests.swift
+  h_c714c5d6d16f81 132-307
+Tests/NotchTubeAudioTests/YouTubeURLParserTests.swift
+  h_c714c5d6d16f81 6,56-85
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.6",
+  "base_commit_sha": "d112515153f6942b3326db5a29cf45ecd428af82",
+  "prompts": {},
+  "humans": {
+    "h_c714c5d6d16f81": {
+      "author": "roicastrocasal <roicc@inditex.com>"
+    }
+  }
+}
