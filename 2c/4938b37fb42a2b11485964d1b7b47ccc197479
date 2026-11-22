@@ -1,0 +1,34 @@
+README.md
+  h_c714c5d6d16f81 12,92,190-198
+Sources/NotchTubeAudio/App/AppEnvironment.swift
+  h_c714c5d6d16f81 23,54,58-59,71
+Sources/NotchTubeAudio/Services/AutoPasteService.swift
+  h_c714c5d6d16f81 1-397
+Sources/NotchTubeAudio/Settings/SettingsManager.swift
+  h_c714c5d6d16f81 35,110-117,185
+Sources/NotchTubeAudio/State/AppState.swift
+  h_c714c5d6d16f81 38,43,72-73,78,101,121,164-166,175-177,189,205-207,237-288
+Sources/NotchTubeAudio/Views/Clipboard/ClipboardHistoryView.swift
+  h_c714c5d6d16f81 6,17-18,20-21,54-56,234,238-248,250-275
+Sources/NotchTubeAudio/Views/Clipboard/ClipboardItemRowView.swift
+  h_c714c5d6d16f81 20-21,74,106-112,259,263
+Sources/NotchTubeAudio/Views/MenuBarContent.swift
+  h_c714c5d6d16f81 71-74
+Sources/NotchTubeAudio/Views/NotchRootView.swift
+  h_c714c5d6d16f81 131-135
+Sources/NotchTubeAudio/Views/SettingsView.swift
+  h_c714c5d6d16f81 31,35,40-41,46-47,54-55,92-101,120-158,264-270
+Tests/NotchTubeAudioTests/AutoPasteServiceTests.swift
+  h_c714c5d6d16f81 1-448
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.6",
+  "base_commit_sha": "2c4938b37fb42a2b11485964d1b7b47ccc197479",
+  "prompts": {},
+  "humans": {
+    "h_c714c5d6d16f81": {
+      "author": "roicastrocasal <roicc@inditex.com>"
+    }
+  }
+}
