@@ -1,0 +1,84 @@
+Info.plist
+  h_c714c5d6d16f81 7-11
+Package.swift
+  h_c714c5d6d16f81 13,36-38
+Scripts/build-app.sh
+  h_c714c5d6d16f81 20-23,42-44
+Sources/NotchTubeAudio/App/AppEnvironment.swift
+  h_c714c5d6d16f81 91,93,106
+Sources/NotchTubeAudio/Features/ColorConverter/ColorConverterFeaturePlugin.swift
+  h_c714c5d6d16f81 57-58,80,85-88,93,98-101,106,111-114
+Sources/NotchTubeAudio/Features/JSONFormatter/JSONFormatterFeaturePlugin.swift
+  h_c714c5d6d16f81 16-17,43,48,53,58
+Sources/NotchTubeAudio/Features/URLCleaner/URLCleanerFeaturePlugin.swift
+  h_c714c5d6d16f81 53-54,81,200-206,228,245-246,249
+Sources/NotchTubeAudio/Features/YouTubeAudio/Models/DownloadItem.swift
+  h_c714c5d6d16f81 69,71,73,75,77,79
+Sources/NotchTubeAudio/Features/YouTubeAudio/Services/DownloadManager.swift
+  h_c714c5d6d16f81 54,80,109,125,131,139,209,214,360,362,366,379,384,398
+Sources/NotchTubeAudio/Features/YouTubeAudio/Views/DownloadQueueView.swift
+  h_c714c5d6d16f81 57,67-69,85-86,98,101
+Sources/NotchTubeAudio/Features/YouTubeAudio/Views/DownloadRowView.swift
+  h_c714c5d6d16f81 96,98,100,106,139
+Sources/NotchTubeAudio/Features/YouTubeAudio/Views/FormatPills.swift
+  h_c714c5d6d16f81 38
+Sources/NotchTubeAudio/Features/YouTubeAudio/Views/NotchPromptView.swift
+  h_c714c5d6d16f81 54,58,72-73,79,81,90-91
+Sources/NotchTubeAudio/Features/YouTubeAudio/Views/ThumbnailView.swift
+  h_c714c5d6d16f81 52
+Sources/NotchTubeAudio/Features/YouTubeAudio/Views/YouTubeAudioSettingsView.swift
+  h_c714c5d6d16f81 19-20,30,39,43-44,55,69,83,103-114,150-152,168-169,195-196
+Sources/NotchTubeAudio/Features/YouTubeAudio/YouTubeAudioFeaturePlugin.swift
+  h_c714c5d6d16f81 19-21,87,95
+Sources/NotchTubeAudio/Models/ClipboardItem.swift
+  h_c714c5d6d16f81 70,91,96,102,104,120,129,132
+Sources/NotchTubeAudio/Resources/Localizable.xcstrings
+  h_c714c5d6d16f81 1-2743
+Sources/NotchTubeAudio/Services/AutoPasteService.swift
+  h_c714c5d6d16f81 32,34,36,38,66,68,275,294,299,304,328,333,338
+Sources/NotchTubeAudio/Services/ClipboardHistoryStore.swift
+  h_c714c5d6d16f81 24,26,28,30,32,34,319-320
+Sources/NotchTubeAudio/Services/ClipboardMonitor.swift
+  h_c714c5d6d16f81 58,88,99,106,128
+Sources/NotchTubeAudio/Services/ClipboardStorage.swift
+  h_c714c5d6d16f81 110,113,327,373
+Sources/NotchTubeAudio/Services/NotchController.swift
+  h_c714c5d6d16f81 98
+Sources/NotchTubeAudio/Settings/SettingsManager.swift
+  h_c714c5d6d16f81 27-28,45-59,175-177,237-251,297
+Sources/NotchTubeAudio/Utilities/FileActions.swift
+  h_c714c5d6d16f81 25
+Sources/NotchTubeAudio/Utilities/L10n.swift
+  h_c714c5d6d16f81 1-334
+Sources/NotchTubeAudio/Views/Clipboard/ClipboardFilterPillsView.swift
+  h_c714c5d6d16f81 51,66
+Sources/NotchTubeAudio/Views/Clipboard/ClipboardHistoryView.swift
+  h_c714c5d6d16f81 85,99-100,121,139-140,184,190-191,205
+Sources/NotchTubeAudio/Views/Clipboard/ClipboardItemRowView.swift
+  h_c714c5d6d16f81 101,103,300-301,311-312,320,329-333,336,338-341
+Sources/NotchTubeAudio/Views/MenuBarContent.swift
+  h_c714c5d6d16f81 55-56,64,66,85,89,96,103
+Sources/NotchTubeAudio/Views/NotchHeaderTabsView.swift
+  h_c714c5d6d16f81 20,61,90-94
+Sources/NotchTubeAudio/Views/NotchRootView.swift
+  h_c714c5d6d16f81 29,66,68,76
+Sources/NotchTubeAudio/Views/Settings/PluginsSettingsTabView.swift
+  h_c714c5d6d16f81 66,85,88-93,98-99,102,118,121
+Sources/NotchTubeAudio/Views/SettingsView.swift
+  h_c714c5d6d16f81 81,87,91-92,109-123,125-126,128,130-132,137-138,140,144,147-149,156,167,172,178-180,182,189,192,197,204,208,213,218,220,224-225,234,241,259-265
+Tests/NotchTubeAudioTests/ClipboardHistoryStoreTests.swift
+  h_c714c5d6d16f81 365-371
+Tests/NotchTubeAudioTests/LocalizationTests.swift
+  h_c714c5d6d16f81 1-406
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.6",
+  "base_commit_sha": "9540d9d76784bc84d5d9423b7b813b8a4296290a",
+  "prompts": {},
+  "humans": {
+    "h_c714c5d6d16f81": {
+      "author": "roicastrocasal <roicc@inditex.com>"
+    }
+  }
+}
