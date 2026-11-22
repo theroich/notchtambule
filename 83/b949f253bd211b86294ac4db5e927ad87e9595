@@ -1,0 +1,26 @@
+README.md
+  h_c714c5d6d16f81 1,3,5-11,14-24,29,31,33-38,42,44,47-62,65,70-83,85-89,91-98,100,102-107,113,115-156,158-164,167-172,176-184,186,188,190,192,194-196,198-200,202-203,205,207,209-210,212,215,218-224,231,233-234,241
+Sources/NotchTubeAudio/App/AppEnvironment.swift
+  h_c714c5d6d16f81 18-20,36-38,46-51,63-65
+Sources/NotchTubeAudio/Features/ColorConverter/ColorConverterFeaturePlugin.swift
+  h_c714c5d6d16f81 1-176
+Sources/NotchTubeAudio/Features/JSONFormatter/JSONFormatterFeaturePlugin.swift
+  h_c714c5d6d16f81 1-135
+Sources/NotchTubeAudio/Features/URLCleaner/URLCleanerFeaturePlugin.swift
+  h_c714c5d6d16f81 1-255
+Sources/NotchTubeAudio/Views/SettingsView.swift
+  h_c714c5d6d16f81 57-62
+Tests/NotchTubeAudioTests/BuiltInPluginsTests.swift
+  h_c714c5d6d16f81 1-271
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.6",
+  "base_commit_sha": "83b949f253bd211b86294ac4db5e927ad87e9595",
+  "prompts": {},
+  "humans": {
+    "h_c714c5d6d16f81": {
+      "author": "roicastrocasal <roicc@inditex.com>"
+    }
+  }
+}
