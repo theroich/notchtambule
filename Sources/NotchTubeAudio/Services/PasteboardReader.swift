@@ -50,6 +50,18 @@ protocol PasteboardReading: AnyObject {
 
     /// Metadata of the application that is currently frontmost when the copy occurred.
     func frontmostSourceApp() -> ClipboardSourceApp?
+
+    /// Writes a `ClipboardPayload` back to the pasteboard, tagging the change with
+    /// ``PasteboardMarkerType/internalCaptureIgnore`` and returning the new `changeCount`.
+    @discardableResult
+    func write(_ payload: ClipboardPayload) -> Int
+}
+
+extension PasteboardReading {
+    @discardableResult
+    func write(_ payload: ClipboardPayload) -> Int {
+        changeCount
+    }
 }
 
 /// Production implementation backed by `NSPasteboard.general` and `NSWorkspace.shared`.
@@ -98,5 +110,42 @@ final class SystemPasteboardReader: PasteboardReading {
             bundleIdentifier: app.bundleIdentifier,
             localizedName: app.localizedName
         )
+    }
+
+    @discardableResult
+    func write(_ payload: ClipboardPayload) -> Int {
+        pasteboard.clearContents()
+
+        switch payload {
+        case .text(let text):
+            pasteboard.setString(text, forType: .string)
+
+        case .url(let url, let rawText):
+            let stringToWrite = rawText.isEmpty ? url.absoluteString : rawText
+            pasteboard.setString(stringToWrite, forType: .string)
+            pasteboard.setString(url.absoluteString, forType: .URL)
+
+        case .files(let urls):
+            let nsURLs = urls.map { $0 as NSURL }
+            pasteboard.writeObjects(nsURLs)
+
+        case .image(let imagePayload):
+            let data = imagePayload.tiffOrPngData
+            if let bitmap = NSBitmapImageRep(data: data),
+               let pngData = bitmap.representation(using: .png, properties: [:]) {
+                pasteboard.setData(pngData, forType: .png)
+                if let tiffData = bitmap.tiffRepresentation {
+                    pasteboard.setData(tiffData, forType: .tiff)
+                }
+            } else {
+                pasteboard.setData(data, forType: .png)
+                pasteboard.setData(data, forType: .tiff)
+            }
+        }
+
+        // Tag the pasteboard write with our internal marker so ClipboardMonitor
+        // never re-captures self-restored items.
+        pasteboard.setData(Data(), forType: PasteboardMarkerType.internalCaptureIgnore)
+        return pasteboard.changeCount
     }
 }

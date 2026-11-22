@@ -35,6 +35,33 @@ struct SettingsManagerTests {
         #expect(reloaded.isClipboardMonitoringEnabled == false)
     }
 
+    @Test func clampsClipboardHistoryRetentionAndPersistsHistorySettings() throws {
+        let suiteName = "notchtube.settings.history.\(UUID().uuidString)"
+        let defaults = try #require(UserDefaults(suiteName: suiteName))
+        defaults.removePersistentDomain(forName: suiteName)
+        defer { defaults.removePersistentDomain(forName: suiteName) }
+
+        let settings = SettingsManager(defaults: defaults)
+        #expect(settings.maxClipboardHistoryItems == 100)
+        #expect(settings.persistClipboardHistory == true)
+        #expect(settings.ignoreConfidentialPasteboardTypes == true)
+
+        settings.maxClipboardHistoryItems = 3
+        #expect(settings.maxClipboardHistoryItems == SettingsManager.minimumClipboardHistoryItems)
+
+        settings.maxClipboardHistoryItems = 999
+        #expect(settings.maxClipboardHistoryItems == SettingsManager.maximumClipboardHistoryItems)
+
+        settings.maxClipboardHistoryItems = 75
+        settings.persistClipboardHistory = false
+        settings.ignoreConfidentialPasteboardTypes = false
+
+        let reloaded = SettingsManager(defaults: defaults)
+        #expect(reloaded.maxClipboardHistoryItems == 75)
+        #expect(reloaded.persistClipboardHistory == false)
+        #expect(reloaded.ignoreConfidentialPasteboardTypes == false)
+    }
+
     @Test func validatesBinaryPaths() {
         #expect(BinaryLocator.isExecutable("/usr/bin/true"))
         #expect(!BinaryLocator.isExecutable("/usr/bin"))

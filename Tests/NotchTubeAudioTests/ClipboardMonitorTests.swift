@@ -37,6 +37,38 @@ final class MockPasteboard: PasteboardReading {
         sourceApp
     }
 
+    @discardableResult
+    func write(_ payload: ClipboardPayload) -> Int {
+        changeCount += 1
+        types = [PasteboardMarkerType.internalCaptureIgnore]
+        fileURLs = []
+        dataByType = [:]
+        stringByType = [:]
+
+        switch payload {
+        case .text(let text):
+            types.insert(.string, at: 0)
+            stringByType[.string] = text
+
+        case .url(let url, let rawText):
+            let stringToWrite = rawText.isEmpty ? url.absoluteString : rawText
+            types.insert(contentsOf: [.string, .URL], at: 0)
+            stringByType[.string] = stringToWrite
+            stringByType[.URL] = url.absoluteString
+
+        case .files(let urls):
+            types.insert(.fileURL, at: 0)
+            fileURLs = urls
+            stringByType[.string] = urls.map(\.lastPathComponent).joined(separator: "\n")
+
+        case .image(let imagePayload):
+            types.insert(.png, at: 0)
+            dataByType[.png] = imagePayload.tiffOrPngData
+        }
+
+        return changeCount
+    }
+
     // MARK: - Helpers to simulate user copy operations
 
     func simulateCopyText(

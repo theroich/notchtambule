@@ -19,6 +19,9 @@ final class SettingsManager {
     static let minimumPromptDuration: Double = 3
     static let maximumPromptDuration: Double = 15
     static let defaultPromptDuration: Double = 8
+    static let minimumClipboardHistoryItems: Int = 10
+    static let maximumClipboardHistoryItems: Int = 500
+    static let defaultMaxClipboardHistoryItems: Int = 100
 
     private enum Key {
         static let downloadDirectory = "notchtube.downloadDirectory"
@@ -27,6 +30,8 @@ final class SettingsManager {
         static let ffmpegPath = "notchtube.ffmpegPath"
         static let clipboardMonitoring = "notchtube.clipboardMonitoring"
         static let ignoreConfidentialTypes = "notchtube.ignoreConfidentialTypes"
+        static let maxClipboardHistoryItems = "notchtube.maxClipboardHistoryItems"
+        static let persistClipboardHistory = "notchtube.persistClipboardHistory"
         static let promptDuration = "notchtube.promptDuration"
     }
 
@@ -66,6 +71,37 @@ final class SettingsManager {
         didSet {
             defaults.set(ignoreConfidentialPasteboardTypes, forKey: Key.ignoreConfidentialTypes)
         }
+    }
+
+    var maxClipboardHistoryItems: Int {
+        didSet {
+            let clamped = min(
+                max(maxClipboardHistoryItems, Self.minimumClipboardHistoryItems),
+                Self.maximumClipboardHistoryItems
+            )
+            if clamped != maxClipboardHistoryItems {
+                maxClipboardHistoryItems = clamped
+            }
+            defaults.set(maxClipboardHistoryItems, forKey: Key.maxClipboardHistoryItems)
+        }
+    }
+
+    ///Alias for `maxClipboardHistoryItems` matching the Issue #2 retention policy wording.
+    var maxHistoryItems: Int {
+        get { maxClipboardHistoryItems }
+        set { maxClipboardHistoryItems = newValue }
+    }
+
+    var persistClipboardHistory: Bool {
+        didSet {
+            defaults.set(persistClipboardHistory, forKey: Key.persistClipboardHistory)
+        }
+    }
+
+    /// Alias for `persistClipboardHistory` matching the Issue #2 storage option wording.
+    var persistHistoryAcrossLaunches: Bool {
+        get { persistClipboardHistory }
+        set { persistClipboardHistory = newValue }
     }
 
     var promptAutoDismissSeconds: Double {
@@ -112,6 +148,14 @@ final class SettingsManager {
 
         self.isClipboardMonitoringEnabled = (defaults.object(forKey: Key.clipboardMonitoring) as? Bool) ?? true
         self.ignoreConfidentialPasteboardTypes = (defaults.object(forKey: Key.ignoreConfidentialTypes) as? Bool) ?? true
+
+        let storedMaxHistory = (defaults.object(forKey: Key.maxClipboardHistoryItems) as? Int) ?? Self.defaultMaxClipboardHistoryItems
+        self.maxClipboardHistoryItems = min(
+            max(storedMaxHistory, Self.minimumClipboardHistoryItems),
+            Self.maximumClipboardHistoryItems
+        )
+
+        self.persistClipboardHistory = (defaults.object(forKey: Key.persistClipboardHistory) as? Bool) ?? true
 
         let storedDuration = (defaults.object(forKey: Key.promptDuration) as? Double) ?? Self.defaultPromptDuration
         self.promptAutoDismissSeconds = min(max(storedDuration, Self.minimumPromptDuration), Self.maximumPromptDuration)
