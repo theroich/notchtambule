@@ -1,0 +1,38 @@
+README.md
+  h_c714c5d6d16f81 113-114,118
+Sources/NotchTubeAudio/App/AppEnvironment.swift
+  h_c714c5d6d16f81 26,63,76,83-85,94-100,116
+Sources/NotchTubeAudio/Resources/Localizable.xcstrings
+  h_c714c5d6d16f81 2724-2808
+Sources/NotchTubeAudio/Services/GlobalHotKeyService.swift
+  h_c714c5d6d16f81 1-233
+Sources/NotchTubeAudio/Services/NotchController.swift
+  h_c714c5d6d16f81 7,11-19,46,123,148,175,195,221-311,438
+Sources/NotchTubeAudio/State/AppState.swift
+  h_c714c5d6d16f81 24-25,37-44,61-69,127,131-132,150,198-200,254,261,268,273-354,413,454
+Sources/NotchTubeAudio/Views/Clipboard/ClipboardHistoryView.swift
+  h_c714c5d6d16f81 18-20,47-73,75,77-93,95,98-100
+Sources/NotchTubeAudio/Views/Clipboard/ClipboardItemRowView.swift
+  h_c714c5d6d16f81 22,82-83,86,92-101,106-108
+Sources/NotchTubeAudio/Views/NotchRootView.swift
+  h_c714c5d6d16f81 135-139,141-142
+Sources/NotchTubeAudio/Views/SettingsView.swift
+  h_c714c5d6d16f81 32,42-43,49,58-59,109-126,198-214
+Tests/NotchTubeAudioTests/ClipboardHotKeyNavigationTests.swift
+  h_c714c5d6d16f81 1-463
+doc/arquitectura.md
+  h_c714c5d6d16f81 171-177
+doc/desarrollo.md
+  h_c714c5d6d16f81 101-106
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.6",
+  "base_commit_sha": "4c8e97cfe7f637ad438fd2bd2cb3315bfc96e2d9",
+  "prompts": {},
+  "humans": {
+    "h_c714c5d6d16f81": {
+      "author": "roicastrocasal <roicc@inditex.com>"
+    }
+  }
+}
