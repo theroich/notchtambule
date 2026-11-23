@@ -1,0 +1,19 @@
+Resources/AppIcon-alt.svg
+  s_f673b715fd94f3::t_4a53ea7a830a7b 1-18
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.6",
+  "base_commit_sha": "6c561e0c822aaf92e6afd12e099daa3d0377797c",
+  "prompts": {},
+  "sessions": {
+    "s_f673b715fd94f3": {
+      "agent_id": {
+        "tool": "pi",
+        "id": "01a204e4-5d49-72fb-8336-15f4d8d5f701",
+        "model": "deepseek-v4.1-flash"
+      },
+      "human_author": "roicastrocasal <roicc@inditex.com>"
+    }
+  }
+}
