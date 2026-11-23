@@ -1,0 +1,54 @@
+README.md
+  h_c714c5d6d16f81 23,25,59,69-79,81,83,108,123
+Sources/NotchTubeAudio/Features/YouTubeAudio/Models/DownloadFormat.swift
+  h_c714c5d6d16f81 2,8-9,12-57,61-90,92-115,118,120-147
+Sources/NotchTubeAudio/Features/YouTubeAudio/Models/DownloadItem.swift
+  h_c714c5d6d16f81 9,18,39,53,74-75
+Sources/NotchTubeAudio/Features/YouTubeAudio/Models/DownloadStatus.swift
+  h_c714c5d6d16f81 13,21
+Sources/NotchTubeAudio/Features/YouTubeAudio/Services/DownloadManager.swift
+  h_c714c5d6d16f81 50,76,78,82,165-166,177,190,197,214-217,230-236,262,264-265,281,288,292-296,298,300,302-307,312,318,322-324,326-327,340-353,410,423-424,426,438-450,457-459,470-479,501,504,522-530
+Sources/NotchTubeAudio/Features/YouTubeAudio/Services/ProcessOutputParser.swift
+  h_c714c5d6d16f81 63,68-72,95,98-149,152-154,165,167,171,173
+Sources/NotchTubeAudio/Features/YouTubeAudio/Services/YTDLPCommandBuilder.swift
+  h_c714c5d6d16f81 1-84
+Sources/NotchTubeAudio/Features/YouTubeAudio/Views/DownloadRowView.swift
+  h_c714c5d6d16f81 32,82,124,126,129,131-132,134,150-153
+Sources/NotchTubeAudio/Features/YouTubeAudio/Views/FormatPills.swift
+  h_c714c5d6d16f81 8-9,11-15,18-30,32-33,35-75,78,80-82,86,91,99,106-124
+Sources/NotchTubeAudio/Features/YouTubeAudio/Views/NotchPromptView.swift
+  h_c714c5d6d16f81 11,13,17-28,30,64-65,67,73,75-80,101,112-113,115
+Sources/NotchTubeAudio/Features/YouTubeAudio/Views/YouTubeAudioSettingsView.swift
+  h_c714c5d6d16f81 10,45-53,56,58,60-63,134
+Sources/NotchTubeAudio/Features/YouTubeAudio/YouTubeAudioFeaturePlugin.swift
+  h_c714c5d6d16f81 34,38-39,62-63,103-110,154-155,167-168,192-218,222-224,230,254
+Sources/NotchTubeAudio/Resources/Localizable.xcstrings
+  h_c714c5d6d16f81 582-598,820-836,1007-1040,2622-2638,2662,2668,2679,2685,3557-3590,3659-3743,3880-3896,3971,3977,4050-4066
+Sources/NotchTubeAudio/Settings/SettingsManager.swift
+  h_c714c5d6d16f81 66,187
+Tests/NotchTubeAudioTests/BuiltInPluginsTests.swift
+  h_c714c5d6d16f81 266,281-434
+Tests/NotchTubeAudioTests/DownloadManagerTests.swift
+  h_c714c5d6d16f81 229,234-235,248-254,312-584,599
+Tests/NotchTubeAudioTests/LocalizationTests.swift
+  h_c714c5d6d16f81 175,178,204-205,235,237-238,248-249,399-455
+Tests/NotchTubeAudioTests/ProcessOutputParserTests.swift
+  h_c714c5d6d16f81 59-78,93-118,122-126
+Tests/NotchTubeAudioTests/SettingsManagerTests.swift
+  h_c714c5d6d16f81 124-150
+Tests/NotchTubeAudioTests/YouTubeURLParserTests.swift
+  h_c714c5d6d16f81 59-61,70
+doc/arquitectura.md
+  h_c714c5d6d16f81 209,265
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.6",
+  "base_commit_sha": "7ffe832c1b07302af96ad1228c8f5af0c4f1814b",
+  "prompts": {},
+  "humans": {
+    "h_c714c5d6d16f81": {
+      "author": "roicastrocasal <roicc@inditex.com>"
+    }
+  }
+}
