@@ -413,6 +413,10 @@ Así no contaminas las preferencias reales del usuario.
 
 Si el módulo tiene ajustes, comprueba que `makeSettingsView()` no es `nil` y que el registro lo incluye. Para vistas complejas, sigue el patrón de `ClipboardNotchUITests`.
 
+### 9.4 Ejemplo de acciones sobre archivos (`FileActionsFeaturePlugin`)
+
+Cuando un módulo interactúa con `NSWorkspace` o `FileManager` (como [`FileActionsFeaturePlugin`](../Sources/NotchTubeAudio/Features/FileActions/FileActionsFeaturePlugin.swift) para `ClipboardPayload.files`), encapsula las operaciones del sistema detrás de un protocolo `@MainActor` inyectable (por ejemplo `FileActionPerforming`) para que los tests unitarios puedan verificar las rutas POSIX, el deduplicado y el manejo de archivos ausentes sin abrir Finder ni lanzar aplicaciones externas.
+
 ## 10. Errores frecuentes
 
 | Síntoma | Causa probable | Solución |

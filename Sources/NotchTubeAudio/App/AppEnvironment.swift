@@ -18,6 +18,7 @@ final class AppEnvironment {
     let urlCleanerPlugin: URLCleanerFeaturePlugin
     let jsonFormatterPlugin: JSONFormatterFeaturePlugin
     let colorConverterPlugin: ColorConverterFeaturePlugin
+    let fileActionsPlugin: FileActionsFeaturePlugin
     let historyStore: ClipboardHistoryStore
     let featureRegistry: FeatureRegistry
     let autoPasteService: AutoPasteService
@@ -38,6 +39,7 @@ final class AppEnvironment {
         let urlCleanerPlugin = URLCleanerFeaturePlugin()
         let jsonFormatterPlugin = JSONFormatterFeaturePlugin()
         let colorConverterPlugin = ColorConverterFeaturePlugin()
+        let fileActionsPlugin = FileActionsFeaturePlugin()
         let clipboard = ClipboardMonitor(settings: settings)
         let historyStore = ClipboardHistoryStore(
             settings: settings,
@@ -49,7 +51,8 @@ final class AppEnvironment {
                 youtubePlugin,
                 urlCleanerPlugin,
                 jsonFormatterPlugin,
-                colorConverterPlugin
+                colorConverterPlugin,
+                fileActionsPlugin
             ]
         )
         let autoPasteService = AutoPasteService()
@@ -68,6 +71,7 @@ final class AppEnvironment {
         self.urlCleanerPlugin = urlCleanerPlugin
         self.jsonFormatterPlugin = jsonFormatterPlugin
         self.colorConverterPlugin = colorConverterPlugin
+        self.fileActionsPlugin = fileActionsPlugin
         self.historyStore = historyStore
         self.featureRegistry = featureRegistry
         self.autoPasteService = autoPasteService

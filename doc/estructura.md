@@ -31,7 +31,8 @@ notchtambule/
 │   │   │   └── Views/
 │   │   ├── URLCleaner/
 │   │   ├── JSONFormatter/
-│   │   └── ColorConverter/
+│   │   ├── ColorConverter/
+│   │   └── FileActions/
 │   ├── Models/
 │   │   ├── ClipboardItem.swift
 │   │   ├── ClipboardPayload.swift
