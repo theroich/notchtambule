@@ -55,6 +55,9 @@ struct BuiltInPluginsTests {
     }
 
     @Test func urlCleanerQuickActionStripsTrackingAndPreservesLegitimateQueryParams() throws {
+        let previousLanguage = forceSpanishLanguage()
+        defer { L10n.currentLanguage = previousLanguage }
+
         let plugin = URLCleanerFeaturePlugin()
         let item = try makeURLItem("https://www.youtube.com/watch?v=dQw4w9WgXcQ&utm_source=twitter&utm_campaign=launch&fbclid=fb123&gclid=gc456&si=share99&t=120s#section")
         let context = FeatureActionContext.noop
@@ -167,6 +170,9 @@ struct BuiltInPluginsTests {
     }
 
     @Test func colorConverterConvertsAccuratelyBetweenHexRGBAndSwiftUIColor() throws {
+        let previousLanguage = forceSpanishLanguage()
+        defer { L10n.currentLanguage = previousLanguage }
+
         let plugin = ColorConverterFeaturePlugin()
         let context = FeatureActionContext.noop
 
@@ -216,6 +222,9 @@ struct BuiltInPluginsTests {
     // MARK: - 4. Coexistencia de los 4 Plugins en FeatureRegistry
 
     @Test func allFourBuiltInPluginsCoexistInFeatureRegistryAndRespectPriorityAndEnablement() throws {
+        let previousLanguage = forceSpanishLanguage()
+        defer { L10n.currentLanguage = previousLanguage }
+
         let (settings, defaults, suiteName) = try makeIsolatedSettings()
         defer { defaults.removePersistentDomain(forName: suiteName) }
 

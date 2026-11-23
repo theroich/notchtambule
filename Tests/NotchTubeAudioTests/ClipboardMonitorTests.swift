@@ -190,6 +190,9 @@ struct ClipboardMonitorTests {
     }
 
     @Test func detectsFinderFileURLsBeforeFallbackString() throws {
+        let previousLanguage = forceSpanishLanguage()
+        defer { L10n.currentLanguage = previousLanguage }
+
         let (monitor, pasteboard, _, defaults, suiteName) = try makeMonitor()
         defer { defaults.removePersistentDomain(forName: suiteName) }
 
@@ -213,6 +216,9 @@ struct ClipboardMonitorTests {
     }
 
     @Test func detectsCopiedImageWithDimensionsAndHash() throws {
+        let previousLanguage = forceSpanishLanguage()
+        defer { L10n.currentLanguage = previousLanguage }
+
         let (monitor, pasteboard, _, defaults, suiteName) = try makeMonitor()
         defer { defaults.removePersistentDomain(forName: suiteName) }
 

@@ -333,6 +333,9 @@ struct AutoPasteServiceTests {
         let item = ClipboardItem(changeCount: 1, payload: .text("Nota sin permiso"))
         harness.historyStore.record(item)
 
+        let previousLanguage = forceSpanishLanguage()
+        defer { L10n.currentLanguage = previousLanguage }
+
         let result = await harness.appState.autoPaste(item: item)
         #expect(result == .copiedOnly(reason: .accessibilityPermissionMissing))
         #expect(harness.pasteboard.string(forType: .string) == "Nota sin permiso")
@@ -410,6 +413,9 @@ struct AutoPasteServiceTests {
     }
 
     @Test func rowViewAndSettingsViewReflectAutoPasteAndAccessibilityState() throws {
+        let previousLanguage = forceSpanishLanguage()
+        defer { L10n.currentLanguage = previousLanguage }
+
         let harness = try makeHarness(trusted: false, autoPasteOnSelect: true)
         defer { harness.cleanup() }
 

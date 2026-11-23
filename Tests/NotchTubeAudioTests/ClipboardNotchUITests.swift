@@ -185,6 +185,9 @@ struct ClipboardNotchUITests {
     }
 
     @Test func clipboardItemRowFormatsMetadataRelativeTimeAndHexColors() throws {
+        let previousLanguage = forceSpanishLanguage()
+        defer { L10n.currentLanguage = previousLanguage }
+
         let now = Date()
         let twoMinutesAgo = now.addingTimeInterval(-120)
 
@@ -300,6 +303,9 @@ struct ClipboardNotchUITests {
     }
 
     @Test func clickingNotchHeaderTabsSwitchesBetweenDownloadsAndClipboardHistory() throws {
+        let previousLanguage = forceSpanishLanguage()
+        defer { L10n.currentLanguage = previousLanguage }
+
         let suiteName = "notchtube.clipboard.ui.real.\(UUID().uuidString)"
         let defaults = try #require(UserDefaults(suiteName: suiteName))
         defaults.removePersistentDomain(forName: suiteName)
@@ -441,6 +447,9 @@ struct ClipboardNotchUITests {
     }
 
     @Test func filterPillsStayOnSingleLineInsideHorizontalScrollWithFixedHeight() throws {
+        let previousLanguage = forceSpanishLanguage()
+        defer { L10n.currentLanguage = previousLanguage }
+
         var selectedFilter: ClipboardContentFilter = .all
         let pillsView = ClipboardFilterPillsView(selection: selectedFilter) { filter in
             selectedFilter = filter

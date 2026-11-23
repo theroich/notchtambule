@@ -252,6 +252,9 @@ struct SettingsManagerTests {
     }
 
     @Test func menuBarContentExposesRecentClipboardItemsAndControls() throws {
+        let previousLanguage = forceSpanishLanguage()
+        defer { L10n.currentLanguage = previousLanguage }
+
         let suiteName = "notchtube.menubar.tests.\(UUID().uuidString)"
         let defaults = try #require(UserDefaults(suiteName: suiteName))
         defaults.removePersistentDomain(forName: suiteName)

@@ -201,6 +201,9 @@ struct DownloadManagerTests {
         let context = try TestContext()
         defer { context.cleanup() }
 
+        let previousLanguage = forceSpanishLanguage()
+        defer { L10n.currentLanguage = previousLanguage }
+
         let stubMetadata = StubMetadataService(
             result: YouTubeMetadata(
                 title: "Fake Song",
