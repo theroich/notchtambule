@@ -210,10 +210,10 @@ brew install yt-dlp ffmpeg
 chmod +x Scripts/build-app.sh
 ./Scripts/build-app.sh
 
-open build/NotchTubeAudio.app
+open build/Notchtambule.app
 ```
 
-El script compila el ejecutable, crea `build/NotchTubeAudio.app` con el `Info.plist` (incluido `LSUIElement = YES`, sin icono en el Dock) y lo firma en modo ad-hoc para ejecutarlo localmente.
+El script compila el ejecutable, crea `build/Notchtambule.app` con el `Info.plist` (incluido `LSUIElement = YES`, sin icono en el Dock) y lo firma en modo ad-hoc para ejecutarlo localmente.
 
 ### 2. Abrir `Package.swift` en Xcode
 
