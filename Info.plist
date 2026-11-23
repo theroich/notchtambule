@@ -11,6 +11,8 @@
 	</array>
 	<key>CFBundleExecutable</key>
 	<string>Notchtambule</string>
+	<key>CFBundleIconFile</key>
+	<string>AppIcon</string>
 	<key>CFBundleIdentifier</key>
 	<string>com.notchtube.audio</string>
 	<key>CFBundleInfoDictionaryVersion</key>

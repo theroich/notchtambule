@@ -1,0 +1,19 @@
+<svg width="512" height="512" viewBox="0 0 512 512" fill="none" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+<use xlink:href="#stroke0_2_3" fill="#2C2E35"/>
+<mask id="stroke1_2_3" fill="white">
+<use xlink:href="#stroke0_2_3"/>
+</mask>
+<path d="M120 24H392C445.019 24 488 66.9807 488 120V392C488 445.019 445.019 488 392 488H120C66.9807 488 24 445.019 24 392V120C24 66.9807 66.9807 24 120 24Z" stroke-width="2" stroke="#030303" mask="url(#stroke1_2_3)"/>
+<path d="M180 24H332V68C332 79.0457 323.046 88 312 88H200C188.954 88 180 79.0457 180 68V24Z" fill="#050709"/>
+<mask id="stroke2_2_3" fill="white">
+<path d="M180 24H332V68C332 79.0457 323.046 88 312 88H200C188.954 88 180 79.0457 180 68V24Z"/>
+</mask>
+<path d="M180 24H332V68C332 79.0457 323.046 88 312 88H200C188.954 88 180 79.0457 180 68V24Z" stroke-width="8" stroke="#050709" mask="url(#stroke2_2_3)"/>
+<circle cx="182" cy="266" r="52" fill="#EEE7D6"/>
+<circle cx="193.3" cy="233.933" r="16" fill="#111522"/>
+<circle cx="330" cy="266" r="52" fill="#EEE7D6"/>
+<circle cx="318.7" cy="233.933" r="16" fill="#111522"/>
+<defs>
+<path id="stroke0_2_3" d="M392 24H120C66.9807 24 24 66.9807 24 120V392C24 445.019 66.9807 488 120 488H392C445.019 488 488 445.019 488 392V120C488 66.9807 445.019 24 392 24Z"/>
+</defs>
+</svg>

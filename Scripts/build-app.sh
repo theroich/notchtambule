@@ -48,13 +48,18 @@ chmod +x "$APP_DIR/Contents/MacOS/$APP_NAME"
 if [[ -d "$BIN_DIR/NotchTubeAudio_NotchTubeAudio.bundle" ]]; then
     cp -R "$BIN_DIR/NotchTubeAudio_NotchTubeAudio.bundle" "$APP_DIR/Contents/Resources/"
 fi
+cp "$ROOT_DIR/Resources/AppIcon.icns" "$APP_DIR/Contents/Resources/AppIcon.icns"
 cp "$ROOT_DIR/Info.plist" "$APP_DIR/Contents/Info.plist"
 
 # Keep CFBundleExecutable in sync with the copied binary name.
 /usr/libexec/PlistBuddy -c "Set :CFBundleExecutable $APP_NAME" "$APP_DIR/Contents/Info.plist" >/dev/null
 
 # Unique build number so macOS sees each bundle as a new build.
-/usr/libexec/PlistBuddy -c "Set :CFBundleVersion $(date +%Y%m%d%H%M)" "$APP_DIR/Contents/Info.plist" >/dev/null
+# CI can override both values: APP_VERSION=1.2.0 BUILD_NUMBER=42 ./Scripts/build-app.sh release
+if [[ -n "${APP_VERSION:-}" ]]; then
+    /usr/libexec/PlistBuddy -c "Set :CFBundleShortVersionString $APP_VERSION" "$APP_DIR/Contents/Info.plist" >/dev/null
+fi
+/usr/libexec/PlistBuddy -c "Set :CFBundleVersion ${BUILD_NUMBER:-$(date +%Y%m%d%H%M)}" "$APP_DIR/Contents/Info.plist" >/dev/null
 
 # Ad-hoc signature: enough to run locally, no developer account required.
 codesign --force --sign - --timestamp=none "$APP_DIR" >/dev/null 2>&1 || {
