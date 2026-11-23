@@ -60,6 +60,9 @@ Todo ocurre en tu Mac: sin cuentas, sin nube y sin telemetría. El historial y l
 | **Limpiador de URLs** | Elimina parámetros de seguimiento (`utm_*`, `fbclid`, `gclid`, `igshid`, `si`, etc.) conservando el resto de la URL. |
 | **Formateador JSON** | Formatea (`Prettify`) o compacta (`Minify`) documentos JSON válidos. |
 | **Conversor de color** | Convierte colores `#RGB`, `#RRGGBB`, `#RRGGBBAA` y `rgb(r, g, b)` a HEX, RGB o `Color` de SwiftUI. |
+| **Developer Toolkit** | Decodifica JWT (header y payload sin verificar firma), texto Base64 / Base64URL y URLs o textos con percent-encoding (`%XX`). |
+
+> **Nota sobre Developer Toolkit:** Todo el análisis se ejecuta en local. La decodificación de JWT es solo estructural (no verifica firmas criptográficas ni sustituye a una librería de validación); Base64 admite alfabeto estándar (`+`, `/`) y Base64URL (`-`, `_`) con padding opcional; y la decodificación de URL aplica percent-encoding estándar sin convertir `+` en espacio.
 
 <p align="center">
   <img src="doc/images/notchtambule-downloads.jpg" width="820" alt="Pestaña de Descargas del notch con la cola de audios de YouTube completados">
