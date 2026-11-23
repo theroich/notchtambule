@@ -19,11 +19,12 @@ let youtube = YouTubeAudioFeaturePlugin(settings: settings, downloadManager: dow
 let urlCleaner = URLCleanerFeaturePlugin()
 let jsonFormatter = JSONFormatterFeaturePlugin()
 let colorConverter = ColorConverterFeaturePlugin()
+let ocr = OCRFeaturePlugin()
 
 let clipboard = ClipboardMonitor(settings: settings)
 let historyStore = ClipboardHistoryStore(settings: settings, clipboardMonitor: clipboard)
 let registry = FeatureRegistry(settings: settings, plugins: [
-    youtube, urlCleaner, jsonFormatter, colorConverter
+    youtube, urlCleaner, jsonFormatter, colorConverter, ocr
 ])
 
 let autoPaste = AutoPasteService()
@@ -250,6 +251,7 @@ Los módulos nuevos no necesitan tocar `SettingsManager` para activarse o desact
 ## Privacidad y seguridad
 
 - El contenido del portapapeles no sale del Mac, salvo la URL que el módulo YouTube Audio envía al endpoint oEmbed de YouTube para obtener título, canal y miniatura.
+- El módulo **OCR de texto** (`OCRFeaturePlugin`) ejecuta el reconocimiento íntegramente en local con `Vision` (`VNRecognizeTextRequest` sobre `CGImageSourceCreateWithData` fuera del main actor) sin red, sin telemetría y sin registrar el texto reconocido en logs. Sus preferencias se guardan en `OCRSettingsStore` (`notchtube.ocr.*`).
 - No hay telemetría, cuentas ni sincronización.
 - La app no está sandboxeada (`com.apple.security.app-sandbox = false`) para poder lanzar `yt-dlp`/`ffmpeg` y escribir en la carpeta elegida.
 - Los tipos confidenciales se descartan antes de crear el `ClipboardItem`.

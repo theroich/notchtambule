@@ -60,6 +60,7 @@ Todo ocurre en tu Mac: sin cuentas, sin nube y sin telemetría. El historial y l
 | **Limpiador de URLs** | Elimina parámetros de seguimiento (`utm_*`, `fbclid`, `gclid`, `igshid`, `si`, etc.) conservando el resto de la URL. |
 | **Formateador JSON** | Formatea (`Prettify`) o compacta (`Minify`) documentos JSON válidos. |
 | **Conversor de color** | Convierte colores `#RGB`, `#RRGGBB`, `#RRGGBBAA` y `rgb(r, g, b)` a HEX, RGB o `Color` de SwiftUI. |
+| **OCR de texto** | Extrae texto seleccionable y copiable de imágenes del portapapeles en local usando Apple Vision, sin enviar nada a la red. |
 
 <p align="center">
   <img src="doc/images/notchtambule-downloads.jpg" width="820" alt="Pestaña de Descargas del notch con la cola de audios de YouTube completados">

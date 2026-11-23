@@ -68,7 +68,8 @@ struct SettingsView: View {
                 YouTubeAudioFeaturePlugin(settings: settings),
                 URLCleanerFeaturePlugin(),
                 JSONFormatterFeaturePlugin(),
-                ColorConverterFeaturePlugin()
+                ColorConverterFeaturePlugin(),
+                OCRFeaturePlugin()
             ]
         )
         self.init(
