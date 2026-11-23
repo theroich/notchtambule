@@ -1,0 +1,18 @@
+Info.plist
+  h_c714c5d6d16f81 13,19,21,35,37,39,47
+README.md
+  h_c714c5d6d16f81 213,216
+Scripts/build-app.sh
+  h_c714c5d6d16f81 3,33-36,38,42-43,46-47,53-55
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.6",
+  "base_commit_sha": "f0bbb00989bd05621a7be50c375bdbf221bcb4f5",
+  "prompts": {},
+  "humans": {
+    "h_c714c5d6d16f81": {
+      "author": "roicastrocasal <roicc@inditex.com>"
+    }
+  }
+}
