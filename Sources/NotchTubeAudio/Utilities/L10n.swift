@@ -221,9 +221,26 @@ enum L10n {
 
     // MARK: - Catalog Inspection
 
-    /// Locates the `Localizable.xcstrings` file in `Bundle.module` or the source tree.
+    /// Resolves the SwiftPM resource bundle safely in both `.app` bundles (`Contents/Resources`)
+    /// and `swift test` / `swift run` environments without triggering `Bundle.module`'s `fatalError`
+    /// when an `.app` bundle built on another machine (e.g. CI) is launched.
+    private static let resourceBundle: Bundle = {
+        let bundleName = "NotchTubeAudio_NotchTubeAudio.bundle"
+        let candidates: [URL?] = [
+            Bundle.main.resourceURL?.appendingPathComponent(bundleName),
+            Bundle.main.bundleURL.appendingPathComponent(bundleName)
+        ]
+        for case let url? in candidates {
+            if let bundle = Bundle(url: url) {
+                return bundle
+            }
+        }
+        return Bundle.module
+    }()
+
+    /// Locates the `Localizable.xcstrings` file in `resourceBundle` or the source tree.
     static func catalogURL() -> URL? {
-        if let bundled = Bundle.module.url(forResource: "Localizable", withExtension: "xcstrings") {
+        if let bundled = resourceBundle.url(forResource: "Localizable", withExtension: "xcstrings") {
             return bundled
         }
         let sourceURL = URL(fileURLWithPath: #filePath)
@@ -292,7 +309,7 @@ enum L10n {
     private static func loadLanguageBundles() -> [String: Bundle] {
         var result: [String: Bundle] = [:]
         for code in supportedLanguageCodes {
-            if let path = Bundle.module.path(forResource: code, ofType: "lproj"),
+            if let path = resourceBundle.path(forResource: code, ofType: "lproj"),
                let bundle = Bundle(path: path) {
                 result[code] = bundle
             }
