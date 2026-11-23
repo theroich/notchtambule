@@ -84,6 +84,7 @@ final class AppEnvironment {
         isStarted = true
 
         NSApp.setActivationPolicy(.accessory)
+        autoPasteService.startObservingFrontmostApplications()
         featureRegistry.startAllEnabled()
         notchController.start()
         clipboardMonitor.start()
@@ -100,6 +101,7 @@ final class AppEnvironment {
 
         clipboardMonitor.stop()
         notchController.stop()
+        autoPasteService.stopObservingFrontmostApplications()
         appState.shutdown()
         downloadManager.terminateAllProcesses()
 

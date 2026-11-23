@@ -176,6 +176,33 @@ final class NotchController: NotchPresenting {
         }
     }
 
+    func hideImmediatelyForAutoPaste() async {
+        cancelTimers()
+        pendingPresentationScreen = nil
+        wasInsideRetention = false
+        suppressHoverUntilExit = isPointerInsideTriggerZone()
+
+        // Immediately resign key status and order the non-activating NSPanel out
+        // so macOS restores key-window focus to the target application right away
+        // instead of waiting ~400ms for DynamicNotch's closing animation.
+        if let window = notch.windowController?.window {
+            window.resignKey()
+            window.orderOut(nil)
+        }
+
+        if hasPresented {
+            hasPresented = false
+            currentScreen = nil
+
+            enqueueTransition { controller in
+                await controller.notch.hide()
+            }
+        }
+
+        // Give AppKit / WindowServer a brief turn to complete focus transfer after ordering out.
+        try? await Task.sleep(for: .milliseconds(30))
+    }
+
     // MARK: - Menu bar
 
     func toggleFromMenu() {
