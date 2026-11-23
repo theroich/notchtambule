@@ -226,11 +226,13 @@ struct DownloadManagerTests {
 
         let actionContext = FeatureActionContext.noop
         let actions = plugin.quickActions(for: clipboardItem, context: actionContext)
-        #expect(actions.count == 2)
+        #expect(actions.count == 3)
         #expect(actions[0].title == "Descargar MP3")
         #expect(actions[0].iconSystemName == "arrow.down.circle")
         #expect(actions[1].title == "Descargar WAV")
         #expect(actions[1].iconSystemName == "waveform")
+        #expect(actions[2].title == "Descargar vídeo")
+        #expect(actions[2].iconSystemName == "film")
 
         // Trigger "Descargar WAV" quick action from clipboard history
         actions[1].handler()
@@ -242,6 +244,13 @@ struct DownloadManagerTests {
         actions[0].handler()
         #expect(manager.items.count == 2)
         #expect(manager.items.first?.format == .mp3)
+
+        // Trigger "Descargar vídeo" quick action -> opens prompt with video preselected
+        actions[2].handler()
+        #expect(actionContext.lastPresentedPrompt?.pluginID == plugin.id)
+        #expect(actionContext.lastPresentedPrompt?.item.id == clipboardItem.id)
+        _ = plugin.makePromptView(for: clipboardItem, context: actionContext, onComplete: {}, onDismiss: {})
+        #expect(plugin.promptFormat.isVideo == true)
 
         manager.terminateAllProcesses()
     }
@@ -300,6 +309,279 @@ struct DownloadManagerTests {
         #expect(historyStore.items.first?.detectedFeatureIDs.isEmpty == true)
         #expect(appState.notchMode == .idle)
     }
+
+    // MARK: - YTDLPCommandBuilder Unit Tests
+
+    @Test func commandBuilderGeneratesAudioArgumentsWithoutVideoFlags() throws {
+        let url = try #require(URL(string: "https://www.youtube.com/watch?v=dQw4w9WgXcQ"))
+        let destination = URL(fileURLWithPath: "/tmp/downloads", isDirectory: true)
+
+        let mp3Args = YTDLPCommandBuilder.arguments(
+            url: url,
+            format: .mp3,
+            ffmpegPath: "/opt/homebrew/bin/ffmpeg",
+            destination: destination,
+            useFallbackClient: false
+        )
+
+        #expect(mp3Args.contains("-x"))
+        #expect(mp3Args.contains("--audio-format"))
+        #expect(mp3Args.contains("mp3"))
+        #expect(mp3Args.contains("--audio-quality"))
+        #expect(mp3Args.contains("0"))
+        #expect(!mp3Args.contains("-f"))
+        #expect(!mp3Args.contains("--merge-output-format"))
+        #expect(!mp3Args.contains("--recode-video"))
+        #expect(mp3Args.contains("/tmp/downloads/%(title)s.%(ext)s"))
+        #expect(!mp3Args.contains("--extractor-args"))
+        #expect(mp3Args.last == url.absoluteString)
+    }
+
+    @Test func commandBuilderGeneratesVideoArgumentsWithResolutionSelectorAndMergeFormat() throws {
+        let url = try #require(URL(string: "https://www.youtube.com/watch?v=dQw4w9WgXcQ"))
+        let destination = URL(fileURLWithPath: "/tmp/downloads", isDirectory: true)
+
+        let args720 = YTDLPCommandBuilder.arguments(
+            url: url,
+            format: .mp4_720p,
+            ffmpegPath: "/opt/homebrew/bin/ffmpeg",
+            destination: destination,
+            useFallbackClient: false
+        )
+        #expect(!args720.contains("-x"))
+        #expect(!args720.contains("--audio-format"))
+        #expect(!args720.contains("--recode-video"))
+        #expect(args720.contains("-f"))
+        #expect(args720.contains("--merge-output-format"))
+        #expect(args720.contains("mp4"))
+        #expect(args720.contains("/tmp/downloads/%(title)s [%(height)sp].%(ext)s"))
+        if let fIndex = args720.firstIndex(of: "-f"), fIndex + 1 < args720.count {
+            let selector = args720[fIndex + 1]
+            #expect(selector.contains("height<=720"))
+            #expect(selector.contains("vcodec^=avc1"))
+            #expect(selector.contains("acodec^=mp4a"))
+        } else {
+            Issue.record("Expected -f selector for 720p video")
+        }
+
+        let args1080Fallback = YTDLPCommandBuilder.arguments(
+            url: url,
+            format: .mp4_1080p,
+            ffmpegPath: "/opt/homebrew/bin/ffmpeg",
+            destination: destination,
+            useFallbackClient: true
+        )
+        #expect(!args1080Fallback.contains("-x"))
+        #expect(args1080Fallback.contains("--merge-output-format"))
+        #expect(args1080Fallback.contains("mp4"))
+        #expect(args1080Fallback.contains("--extractor-args"))
+        #expect(args1080Fallback.contains("youtube:player_client=web_embedded"))
+        if let fIndex = args1080Fallback.firstIndex(of: "-f"), fIndex + 1 < args1080Fallback.count {
+            #expect(args1080Fallback[fIndex + 1].contains("height<=1080"))
+        } else {
+            Issue.record("Expected -f selector for 1080p video")
+        }
+    }
+
+    // MARK: - Video MP4 Download Integration Tests
+
+    @Test func completesVideoDownloadWithMergerAndCapturesMP4OutputPath() async throws {
+        let context = try TestContext { downloads, root in
+            """
+            #!/bin/sh
+            printf '%s\n' "$@" > "\(root.path)/args.txt"
+            sleep 0.05
+            echo "[download] Destination: \(downloads.path)/Demo Video [1080p].f137.mp4"
+            echo "  40.0%"
+            echo "  100.0%"
+            echo "[download] Destination: \(downloads.path)/Demo Video [1080p].f140.m4a"
+            echo "  100.0%"
+            echo '[Merger] Merging formats into "\(downloads.path)/Demo Video [1080p].mp4"'
+            sleep 0.1
+            printf 'fake mp4 video' > "\(downloads.path)/Demo Video [1080p].mp4"
+            echo "\(downloads.path)/Demo Video [1080p].mp4"
+            exit 0
+            """
+        }
+        defer { context.cleanup() }
+
+        let manager = DownloadManager(settings: context.settings)
+        let item = try manager.enqueueForTesting(title: "Demo Video", format: .mp4_1080p)
+
+        let finished = await context.wait(timeout: 8) {
+            item.status == .completed
+        }
+        #expect(finished, "estado: \(item.status), error: \(item.errorMessage ?? "nil")")
+        #expect(item.progress == 1)
+        #expect(item.outputFileURL?.lastPathComponent == "Demo Video [1080p].mp4")
+        #expect(FileManager.default.fileExists(atPath: item.outputFileURL?.path ?? ""))
+
+        let capturedArgs = try String(
+            contentsOf: context.root.appendingPathComponent("args.txt"),
+            encoding: .utf8
+        )
+        #expect(capturedArgs.contains("--merge-output-format\nmp4"))
+        #expect(capturedArgs.contains("height<=1080"))
+        #expect(!capturedArgs.contains("\n-x\n"))
+    }
+
+    @Test func retriesVideoDownloadWithFallbackClientAfter403() async throws {
+        let context = try TestContext { downloads, root in
+            """
+            #!/bin/sh
+            counter="\(root.path)/attempts"
+            n=$(cat "$counter" 2>/dev/null || echo 0)
+            n=$((n + 1))
+            echo "$n" > "$counter"
+            case "$*" in
+            *player_client=web_embedded*)
+                echo "  60.0%"
+                echo '[Merger] Merging formats into "\(downloads.path)/Video 403 [720p].mp4"'
+                printf 'mp4data' > "\(downloads.path)/Video 403 [720p].mp4"
+                echo "\(downloads.path)/Video 403 [720p].mp4"
+                exit 0
+                ;;
+            *)
+                echo "ERROR: unable to download video data: HTTP Error 403: Forbidden" >&2
+                exit 1
+                ;;
+            esac
+            """
+        }
+        defer { context.cleanup() }
+
+        let manager = DownloadManager(settings: context.settings)
+        let item = try manager.enqueueForTesting(title: "Video 403", format: .mp4_720p)
+
+        let finished = await context.wait(timeout: 8) { item.status == .completed }
+        #expect(finished, "estado: \(item.status), error: \(item.errorMessage ?? "nil")")
+        #expect(item.outputFileURL?.lastPathComponent == "Video 403 [720p].mp4")
+        #expect(context.attempts == 2)
+    }
+
+    @Test func cancelsAndRetriesVideoDownload() async throws {
+        let context = try TestContext { downloads, root in
+            """
+            #!/bin/sh
+            counter="\(root.path)/attempts"
+            n=$(cat "$counter" 2>/dev/null || echo 0)
+            n=$((n + 1))
+            echo "$n" > "$counter"
+            if [ "$n" -eq 1 ]; then
+                echo "  15.0%"
+                while true; do sleep 0.2; echo "  20.0%"; done
+            fi
+            echo "  80.0%"
+            echo '[Merger] Merging formats into "\(downloads.path)/Retried [720p].mp4"'
+            printf 'video' > "\(downloads.path)/Retried [720p].mp4"
+            echo "\(downloads.path)/Retried [720p].mp4"
+            exit 0
+            """
+        }
+        defer { context.cleanup() }
+
+        let manager = DownloadManager(settings: context.settings)
+        let item = try manager.enqueueForTesting(title: "Retried", format: .mp4_720p)
+
+        #expect(await context.wait(timeout: 4) { item.status == .downloading && item.progress > 0 })
+        manager.cancel(item)
+        #expect(item.status == .cancelled)
+        #expect(item.canRetry)
+
+        manager.retry(item)
+        let completed = await context.wait(timeout: 8) { item.status == .completed }
+        #expect(completed, "estado: \(item.status), error: \(item.errorMessage ?? "nil")")
+        #expect(item.outputFileURL?.lastPathComponent == "Retried [720p].mp4")
+        #expect(context.attempts == 2)
+    }
+
+    @Test func failsWithClearMessageWhenVideoProducesUnexpectedMKVContainer() async throws {
+        let previousLanguage = forceSpanishLanguage()
+        defer { L10n.currentLanguage = previousLanguage }
+
+        let context = try TestContext { downloads, _ in
+            """
+            #!/bin/sh
+            echo "  100.0%"
+            echo '[Merger] Merging formats into "\(downloads.path)/Unexpected [1080p].mkv"'
+            printf 'mkv' > "\(downloads.path)/Unexpected [1080p].mkv"
+            echo "\(downloads.path)/Unexpected [1080p].mkv"
+            exit 0
+            """
+        }
+        defer { context.cleanup() }
+
+        let manager = DownloadManager(settings: context.settings)
+        let item = try manager.enqueueForTesting(title: "Unexpected", format: .mp4_1080p)
+
+        let finished = await context.wait(timeout: 8) { item.status == .failed }
+        #expect(finished)
+        #expect(item.outputFileURL == nil)
+        #expect(item.errorMessage?.contains(".MKV") == true)
+        #expect(item.errorMessage?.contains(".MP4") == true)
+    }
+
+    @Test func missingFFmpegFailsGracefullyForVideoDownload() async throws {
+        let context = try TestContext()
+        defer { context.cleanup() }
+        context.settings.ffmpegPath = "/definitely/not/here/ffmpeg"
+
+        let manager = DownloadManager(settings: context.settings)
+        let item = try manager.enqueueForTesting(title: "No FFmpeg", format: .mp4_1080p)
+
+        let finished = await context.wait(timeout: 3) { item.status == .failed }
+        #expect(finished)
+        #expect(item.errorMessage?.contains("ffmpeg") == true)
+    }
+
+    @Test func locateOutputFileFindsMP4AndDisambiguatesResolutionsAndSpecialCharacters() throws {
+        let context = try TestContext()
+        defer { context.cleanup() }
+
+        let downloads = context.settings.downloadDirectory
+        let fileMP3 = downloads.appendingPathComponent("Track 🎵 A_B.mp3")
+        let file720 = downloads.appendingPathComponent("Track 🎵 A⧸B [720p].mp4")
+        let file1080 = downloads.appendingPathComponent("Track 🎵 A⧸B [1080p].mp4")
+
+        try Data("mp3".utf8).write(to: fileMP3)
+        try Data("720".utf8).write(to: file720)
+        try Data("1080".utf8).write(to: file1080)
+
+        let manager = DownloadManager(settings: context.settings)
+        let ytURL = try #require(URL(string: "https://www.youtube.com/watch?v=dQw4w9WgXcQ"))
+
+        let itemMP3 = DownloadItem(
+            url: ytURL,
+            canonicalURLString: ytURL.absoluteString,
+            videoID: "dQw4w9WgXcQ",
+            title: "Track 🎵 A/B",
+            authorName: nil,
+            thumbnailURL: nil,
+            format: .mp3
+        )
+        let item720 = DownloadItem(
+            url: ytURL,
+            canonicalURLString: ytURL.absoluteString,
+            videoID: "dQw4w9WgXcQ",
+            title: "Track 🎵 A/B",
+            authorName: nil,
+            thumbnailURL: nil,
+            format: .mp4_720p
+        )
+        let item1080 = DownloadItem(
+            url: ytURL,
+            canonicalURLString: ytURL.absoluteString,
+            videoID: "dQw4w9WgXcQ",
+            title: "Track 🎵 A/B",
+            authorName: nil,
+            thumbnailURL: nil,
+            format: .mp4_1080p
+        )
+
+        #expect(manager.locateOutputFile(for: itemMP3)?.lastPathComponent == "Track 🎵 A_B.mp3")
+        #expect(manager.locateOutputFile(for: item720)?.lastPathComponent == "Track 🎵 A⧸B [720p].mp4")
+        #expect(manager.locateOutputFile(for: item1080)?.lastPathComponent == "Track 🎵 A⧸B [1080p].mp4")
+    }
 }
 
 private struct StubMetadataService: YouTubeMetadataFetching {
@@ -314,7 +596,7 @@ private struct StubMetadataService: YouTubeMetadataFetching {
 
 private extension DownloadManager {
     /// Enqueues a synthetic detected video and returns the created item.
-    func enqueueForTesting(title: String, format: AudioFormat) throws -> DownloadItem {
+    func enqueueForTesting(title: String, format: DownloadFormat) throws -> DownloadItem {
         let url = try #require(URL(string: "https://www.youtube.com/watch?v=dQw4w9WgXcQ"))
         let video = DetectedVideo(
             videoID: "dQw4w9WgXcQ",

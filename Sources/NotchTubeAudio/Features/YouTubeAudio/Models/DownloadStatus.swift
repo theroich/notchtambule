@@ -10,6 +10,7 @@ enum DownloadStatus: String, Equatable, Hashable, Sendable {
     case queued
     case downloading
     case converting
+    case merging
     case completed
     case failed
     case cancelled
@@ -17,7 +18,7 @@ enum DownloadStatus: String, Equatable, Hashable, Sendable {
     /// `true` while the job still owns a slot in the download queue.
     var isActive: Bool {
         switch self {
-        case .queued, .downloading, .converting:
+        case .queued, .downloading, .converting, .merging:
             return true
         case .completed, .failed, .cancelled:
             return false

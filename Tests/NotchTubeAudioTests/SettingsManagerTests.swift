@@ -121,6 +121,33 @@ struct SettingsManagerTests {
         #expect(reloaded.isClipboardMonitoringEnabled == false)
     }
 
+    @Test func migratesLegacyDefaultFormatsAndPersistsVideoFormatsWithSafeFallback() throws {
+        let suiteName = "notchtube.settings.format.migration.\(UUID().uuidString)"
+        let defaults = try #require(UserDefaults(suiteName: suiteName))
+        defaults.removePersistentDomain(forName: suiteName)
+        defer { defaults.removePersistentDomain(forName: suiteName) }
+
+        // Legacy "mp3" value migrates intact.
+        defaults.set("mp3", forKey: "notchtube.defaultFormat")
+        #expect(SettingsManager(defaults: defaults).defaultFormat == .mp3)
+
+        // Legacy "wav" value migrates intact.
+        defaults.set("wav", forKey: "notchtube.defaultFormat")
+        #expect(SettingsManager(defaults: defaults).defaultFormat == .wav)
+
+        // Unknown value safely falls back to .mp3.
+        defaults.set("webm_4k_unknown", forKey: "notchtube.defaultFormat")
+        #expect(SettingsManager(defaults: defaults).defaultFormat == .mp3)
+
+        // New video formats persist across reloads.
+        let settings = SettingsManager(defaults: defaults)
+        settings.defaultFormat = .mp4_720p
+        #expect(SettingsManager(defaults: defaults).defaultFormat == .mp4_720p)
+
+        settings.defaultFormat = .mp4_1080p
+        #expect(SettingsManager(defaults: defaults).defaultFormat == .mp4_1080p)
+    }
+
     @Test func clampsClipboardHistoryRetentionAndPersistsHistorySettings() throws {
         let suiteName = "notchtube.settings.history.\(UUID().uuidString)"
         let defaults = try #require(UserDefaults(suiteName: suiteName))

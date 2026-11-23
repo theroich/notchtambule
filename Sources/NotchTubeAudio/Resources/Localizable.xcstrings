@@ -579,6 +579,23 @@
         }
       }
     },
+    "downloads.error.unexpected_container" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "yt-dlp produced a .%1$@ file instead of .%2$@. Check that ffmpeg is available."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "yt-dlp generó un archivo .%1$@ en lugar de .%2$@. Comprueba que ffmpeg esté disponible."
+          }
+        }
+      }
+    },
     "downloads.error.ytdlp_not_found" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -800,6 +817,23 @@
         }
       }
     },
+    "downloads.status.merging" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Merging…"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Combinando…"
+          }
+        }
+      }
+    },
     "downloads.status.queued" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -966,6 +1000,40 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Formato %@"
+          }
+        }
+      }
+    },
+    "format.video.1080p" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "MP4 1080p"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "MP4 1080p"
+          }
+        }
+      }
+    },
+    "format.video.720p" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "MP4 720p"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "MP4 720p"
           }
         }
       }
@@ -2551,6 +2619,23 @@
         }
       }
     },
+    "plugin.youtube_audio.action.download_video" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Download video"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Descargar vídeo"
+          }
+        }
+      }
+    },
     "plugin.youtube_audio.action.download_wav" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -2574,13 +2659,13 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "YouTube Audio"
+            "value" : "YouTube Audio & Video"
           }
         },
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "YouTube Audio"
+            "value" : "YouTube Audio y Vídeo"
           }
         }
       }
@@ -2591,13 +2676,13 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Detects YouTube links and lets you download their audio as MP3 or WAV using yt-dlp and ffmpeg."
+            "value" : "Detects YouTube links and lets you download audio (MP3, WAV) or video (MP4 720p, 1080p) using yt-dlp and ffmpeg."
           }
         },
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Detecta enlaces de YouTube y permite descargar su audio en MP3 o WAV usando yt-dlp y ffmpeg."
+            "value" : "Detecta enlaces de YouTube y permite descargar audio (MP3, WAV) o vídeo (MP4 720p, 1080p) usando yt-dlp y ffmpeg."
           }
         }
       }
@@ -3469,6 +3554,40 @@
         }
       }
     },
+    "youtube.prompt.format.audio" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Audio"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Audio"
+          }
+        }
+      }
+    },
+    "youtube.prompt.format.video" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Video"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Vídeo"
+          }
+        }
+      }
+    },
     "youtube.prompt.missing_binaries" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -3533,6 +3652,91 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Descargar el audio a la carpeta configurada"
+          }
+        }
+      }
+    },
+    "youtube.prompt.save_video" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Save video"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Guardar vídeo"
+          }
+        }
+      }
+    },
+    "youtube.prompt.save_video.help" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Download video to the configured folder"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Descargar el vídeo a la carpeta configurada"
+          }
+        }
+      }
+    },
+    "youtube.prompt.video.1080p" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "1080p"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "1080p"
+          }
+        }
+      }
+    },
+    "youtube.prompt.video.720p" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "720p"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "720p"
+          }
+        }
+      }
+    },
+    "youtube.prompt.video.quality_help" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "MP4 (H.264/AAC), up to selected quality"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "MP4 (H.264/AAC), hasta la calidad elegida"
           }
         }
       }
@@ -3673,6 +3877,23 @@
         }
       }
     },
+    "youtube.settings.default_format.video" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Video"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Vídeo"
+          }
+        }
+      }
+    },
     "youtube.settings.destination_folder" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -3747,13 +3968,13 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "MP3 and WAV audio files will be saved in this folder."
+            "value" : "Audio (MP3, WAV) and video (MP4) files will be saved in this folder."
           }
         },
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Los audios MP3 y WAV se guardarán en esta carpeta."
+            "value" : "Los archivos de audio (MP3, WAV) y vídeo (MP4) se guardarán en esta carpeta."
           }
         }
       }
@@ -3822,6 +4043,23 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Herramientas"
+          }
+        }
+      }
+    },
+    "youtube.settings.video.ffmpeg_help" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "MP4 video downloads require ffmpeg to merge video and audio streams and may use significantly more disk space."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Las descargas de vídeo MP4 requieren ffmpeg para combinar vídeo y audio y pueden ocupar bastante más espacio en disco."
           }
         }
       }

@@ -47,7 +47,7 @@ final class DownloadManager {
         items.contains { $0.status.isFinished }
     }
 
-    func enqueue(video: DetectedVideo, format: AudioFormat) {
+    func enqueue(video: DetectedVideo, format: DownloadFormat) {
         isShuttingDown = false
         let item = DownloadItem(video: video, format: format)
         items.insert(item, at: 0)
@@ -73,11 +73,13 @@ final class DownloadManager {
 
         item.status = .cancelled
         item.finishedAt = Date()
-        if let run = running[item.id] {
+        if let run = running.removeValue(forKey: item.id) {
             run.cancelled = true
+            run.clearPipeHandlers()
             run.terminate()
         }
         Log.downloads.info("Cancelled download \(item.id.uuidString, privacy: .public)")
+        startNextIfPossible()
     }
 
     func retry(_ item: DownloadItem) {
@@ -160,6 +162,8 @@ final class DownloadManager {
         let stdoutAccumulator = LineAccumulator()
         let stderrAccumulator = LineAccumulator()
         let itemID = item.id
+        let run = RunningDownload(process: process)
+        let runID = run.id
 
         stdoutPipe.fileHandleForReading.readabilityHandler = { handle in
             let data = handle.availableData
@@ -170,7 +174,7 @@ final class DownloadManager {
             let lines = stdoutAccumulator.append(data)
             guard !lines.isEmpty else { return }
             Task { @MainActor [weak self] in
-                self?.consume(lines, itemID: itemID, isError: false)
+                self?.consume(lines, itemID: itemID, runID: runID, isError: false)
             }
         }
 
@@ -183,14 +187,14 @@ final class DownloadManager {
             let lines = stderrAccumulator.append(data)
             guard !lines.isEmpty else { return }
             Task { @MainActor [weak self] in
-                self?.consume(lines, itemID: itemID, isError: true)
+                self?.consume(lines, itemID: itemID, runID: runID, isError: true)
             }
         }
 
         process.terminationHandler = { finishedProcess in
             let exitCode = finishedProcess.terminationStatus
             Task { @MainActor [weak self] in
-                self?.finish(itemID: itemID, exitCode: exitCode)
+                self?.finish(itemID: itemID, runID: runID, exitCode: exitCode)
             }
         }
 
@@ -201,16 +205,16 @@ final class DownloadManager {
         item.errorMessage = nil
         item.outputFileURL = nil
 
-        let run = RunningDownload(process: process)
         running[item.id] = run
 
         do {
             try process.run()
             Log.downloads.info("Started yt-dlp (pid \(process.processIdentifier)) for \(item.title, privacy: .public)")
         } catch {
-            running.removeValue(forKey: item.id)
-            stdoutPipe.fileHandleForReading.readabilityHandler = nil
-            stderrPipe.fileHandleForReading.readabilityHandler = nil
+            if running[item.id]?.id == runID {
+                running.removeValue(forKey: item.id)
+            }
+            run.clearPipeHandlers()
             fail(item, message: L10n.format("downloads.error.launch_failed", error.localizedDescription))
         }
     }
@@ -223,36 +227,13 @@ final class DownloadManager {
         destination: URL,
         useFallbackClient: Bool
     ) -> [String] {
-        let outputTemplate = destination
-            .appendingPathComponent("%(title)s.%(ext)s")
-            .path
-
-        var arguments = [
-            "--newline",
-            "--no-playlist",
-            // --print implies --quiet; restore the normal log stream so the
-            // [ExtractAudio] phase can be detected, then force progress.
-            "--print", "after_move:filepath",
-            "--no-quiet",
-            "--progress",
-            "--no-colors",
-            "-x",
-            "--audio-format", item.format.rawValue,
-            "--audio-quality", "0",
-            "--ffmpeg-location", ffmpegPath,
-            "--progress-template", "download:%(progress._percent_str)s",
-            "-o", outputTemplate
-        ]
-
-        if useFallbackClient {
-            // YouTube frequently blocks the default client with HTTP 403 on
-            // certain videos. The embedded web client does not require a GVS
-            // PO token and is a reliable audio fallback.
-            arguments += ["--extractor-args", "youtube:player_client=web_embedded"]
-        }
-
-        arguments.append(item.url.absoluteString)
-        return arguments
+        YTDLPCommandBuilder.arguments(
+            url: item.url,
+            format: item.format,
+            ffmpegPath: ffmpegPath,
+            destination: destination,
+            useFallbackClient: useFallbackClient
+        )
     }
 
     private func environment(ytDlpPath: String, ffmpegPath: String) -> [String: String] {
@@ -278,9 +259,10 @@ final class DownloadManager {
 
     // MARK: - Output parsing
 
-    private func consume(_ lines: [String], itemID: UUID, isError: Bool) {
+    private func consume(_ lines: [String], itemID: UUID, runID: UUID, isError: Bool) {
         guard let item = items.first(where: { $0.id == itemID }) else { return }
-        guard let run = running[itemID] else { return }
+        guard let run = running[itemID], run.id == runID else { return }
+        let processingStatus: DownloadStatus = item.format.isVideo ? .merging : .converting
 
         for rawLine in lines {
             let line = ProcessOutputParser.normalize(rawLine)
@@ -296,47 +278,53 @@ final class DownloadManager {
                 if item.status == .queued {
                     item.status = .downloading
                 }
-                if percent >= 99.95, item.status == .downloading {
+                if !item.format.isVideo, percent >= 99.95, item.status == .downloading {
                     item.status = .converting
                 }
                 continue
             }
 
             if ProcessOutputParser.indicatesConversion(line) {
-                item.status = .converting
+                item.status = processingStatus
                 item.progress = max(item.progress, 0.99)
-                continue
             }
 
-            if let outputURL = ProcessOutputParser.outputFileURL(from: line, destination: settings.downloadDirectory) {
+            if let outputURL = ProcessOutputParser.outputFileURL(
+                from: line,
+                destination: settings.downloadDirectory,
+                expectedFormat: item.format
+            ) {
                 item.outputFileURL = outputURL
+                run.unexpectedOutputURL = nil
                 if item.status == .downloading {
-                    item.status = .converting
+                    item.status = processingStatus
                 }
+            } else if let unexpectedURL = ProcessOutputParser.unexpectedOutputFileURL(
+                from: line,
+                destination: settings.downloadDirectory,
+                expectedFormat: item.format
+            ) {
+                run.unexpectedOutputURL = unexpectedURL
             }
         }
     }
 
-    private func finish(itemID: UUID, exitCode: Int32) {
+    private func finish(itemID: UUID, runID: UUID, exitCode: Int32) {
         Task { @MainActor [weak self] in
             // The last stdout/stderr chunks are dispatched to the main actor
             // independently from the termination handler. Give them a moment
             // to land before deciding between success, a 403 retry or failure.
             try? await Task.sleep(for: .milliseconds(100))
-            self?.complete(itemID: itemID, exitCode: exitCode)
+            self?.complete(itemID: itemID, runID: runID, exitCode: exitCode)
         }
     }
 
-    private func complete(itemID: UUID, exitCode: Int32) {
-        let run = running.removeValue(forKey: itemID)
-        if let run {
-            if let pipe = run.process.standardOutput as? Pipe {
-                pipe.fileHandleForReading.readabilityHandler = nil
-            }
-            if let pipe = run.process.standardError as? Pipe {
-                pipe.fileHandleForReading.readabilityHandler = nil
-            }
+    private func complete(itemID: UUID, runID: UUID, exitCode: Int32) {
+        guard let currentRun = running[itemID], currentRun.id == runID else {
+            return
         }
+        let run = running.removeValue(forKey: itemID)
+        run?.clearPipeHandlers()
 
         defer { startNextIfPossible() }
 
@@ -349,13 +337,24 @@ final class DownloadManager {
         }
 
         if exitCode == 0 {
+            if item.outputFileURL == nil {
+                item.outputFileURL = locateOutputFile(for: item)
+            }
+
+            if item.outputFileURL == nil, let unexpectedURL = run?.unexpectedOutputURL {
+                let message = L10n.format(
+                    "downloads.error.unexpected_container",
+                    unexpectedURL.pathExtension.uppercased(),
+                    item.format.fileExtension.uppercased()
+                )
+                fail(item, message: message)
+                return
+            }
+
             item.progress = 1
             item.status = .completed
             item.finishedAt = Date()
 
-            if item.outputFileURL == nil {
-                item.outputFileURL = locateOutputFile(for: item)
-            }
             if item.outputFileURL == nil {
                 Log.downloads.error("yt-dlp finished successfully but output file could not be resolved")
             } else {
@@ -408,7 +407,7 @@ final class DownloadManager {
     }
 
     /// Fallback used when the `after_move:filepath` line could not be parsed.
-    private func locateOutputFile(for item: DownloadItem) -> URL? {
+    func locateOutputFile(for item: DownloadItem) -> URL? {
         let directory = settings.downloadDirectory
         guard let contents = try? FileManager.default.contentsOfDirectory(
             at: directory,
@@ -421,7 +420,10 @@ final class DownloadManager {
         let extensionName = item.format.fileExtension
         let since = (item.startedAt ?? item.createdAt).addingTimeInterval(-5)
         let title = item.title
+        let normalizedTitle = Self.normalizedTitleForMatching(title)
+        let expectedResolutionTag = item.format.maxVideoHeight.map { "[\($0)p]" }
 
+        var matchingTitleAndResolution: [(url: URL, date: Date)] = []
         var matchingTitle: [(url: URL, date: Date)] = []
         var recent: [(url: URL, date: Date)] = []
 
@@ -433,14 +435,28 @@ final class DownloadManager {
             else { continue }
 
             let fileTitle = url.deletingPathExtension().lastPathComponent
-            if fileTitle.localizedCaseInsensitiveContains(title)
-                || title.localizedCaseInsensitiveContains(fileTitle) {
+            let normalizedFileTitle = Self.normalizedTitleForMatching(fileTitle)
+            let matchesTitle = fileTitle.localizedCaseInsensitiveContains(title)
+                || title.localizedCaseInsensitiveContains(fileTitle)
+                || (!normalizedTitle.isEmpty && (
+                    normalizedFileTitle.localizedCaseInsensitiveContains(normalizedTitle)
+                    || normalizedTitle.localizedCaseInsensitiveContains(normalizedFileTitle)
+                ))
+
+            if matchesTitle {
+                if let tag = expectedResolutionTag,
+                   fileTitle.localizedCaseInsensitiveContains(tag) {
+                    matchingTitleAndResolution.append((url, modified))
+                }
                 matchingTitle.append((url, modified))
             } else {
                 recent.append((url, modified))
             }
         }
 
+        if let best = matchingTitleAndResolution.max(by: { $0.date < $1.date }) {
+            return best.url
+        }
         if let best = matchingTitle.max(by: { $0.date < $1.date }) {
             return best.url
         }
@@ -449,6 +465,16 @@ final class DownloadManager {
             return recent[0].url
         }
         return nil
+    }
+
+    /// Strips filesystem-substituted punctuation (`/`, `:`, `⧸`, `：`, `\\`, `|`, `?`, `*`)
+    /// so sanitized yt-dlp filenames still match titles containing special characters.
+    private static func normalizedTitleForMatching(_ value: String) -> String {
+        let disallowed = CharacterSet(charactersIn: "/:\\|?*\"<>⧸：_")
+        let pieces = value.components(separatedBy: disallowed)
+            .map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
+            .filter { !$0.isEmpty }
+        return pieces.joined(separator: " ")
     }
 
     // MARK: - Termination
@@ -472,8 +498,10 @@ final class DownloadManager {
 /// `Process` is only touched from the main actor apart from its own handlers.
 @MainActor
 private final class RunningDownload {
+    let id = UUID()
     let process: Process
     var cancelled = false
+    var unexpectedOutputURL: URL?
     private var errorLines: [String] = []
 
     init(process: Process) {
@@ -488,6 +516,15 @@ private final class RunningDownload {
         errorLines.append(line)
         if errorLines.count > 12 {
             errorLines.removeFirst(errorLines.count - 12)
+        }
+    }
+
+    func clearPipeHandlers() {
+        if let pipe = process.standardOutput as? Pipe {
+            pipe.fileHandleForReading.readabilityHandler = nil
+        }
+        if let pipe = process.standardError as? Pipe {
+            pipe.fileHandleForReading.readabilityHandler = nil
         }
     }
 

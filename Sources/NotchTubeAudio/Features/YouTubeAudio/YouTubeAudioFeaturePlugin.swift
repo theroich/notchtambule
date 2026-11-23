@@ -31,10 +31,12 @@ final class YouTubeAudioFeaturePlugin: ClipboardFeaturePlugin {
     // MARK: - Internal Prompt State
 
     private(set) var detectedVideo: DetectedVideo?
-    var promptFormat: AudioFormat
+    var promptFormat: DownloadFormat
 
     @ObservationIgnored private var metadataTask: Task<Void, Never>?
     @ObservationIgnored private var activePromptItemID: UUID?
+    @ObservationIgnored private var pendingPromptFormat: DownloadFormat?
+    @ObservationIgnored private var pendingPromptItemID: UUID?
 
     init(
         settings: SettingsManager,
@@ -57,6 +59,8 @@ final class YouTubeAudioFeaturePlugin: ClipboardFeaturePlugin {
         cancelMetadataTask()
         detectedVideo = nil
         activePromptItemID = nil
+        pendingPromptFormat = nil
+        pendingPromptItemID = nil
         downloadManager.terminateAllProcesses()
     }
 
@@ -96,6 +100,14 @@ final class YouTubeAudioFeaturePlugin: ClipboardFeaturePlugin {
                 iconSystemName: "waveform"
             ) { [weak self] in
                 self?.enqueueQuickDownload(for: link, format: .wav, context: context)
+            },
+            FeatureQuickAction(
+                id: "\(id).download-video.\(item.id.uuidString)",
+                pluginID: id,
+                title: L10n.string("plugin.youtube_audio.action.download_video"),
+                iconSystemName: "film"
+            ) { [weak self] in
+                self?.presentVideoPrompt(for: item, context: context)
             }
         ]
     }
@@ -139,6 +151,8 @@ final class YouTubeAudioFeaturePlugin: ClipboardFeaturePlugin {
         cancelMetadataTask()
         detectedVideo = nil
         activePromptItemID = nil
+        pendingPromptFormat = nil
+        pendingPromptItemID = nil
 
         downloadManager.enqueue(video: videoToEnqueue, format: selectedFormat)
         context.switchToPluginActivity(pluginID: id)
@@ -150,6 +164,8 @@ final class YouTubeAudioFeaturePlugin: ClipboardFeaturePlugin {
         cancelMetadataTask()
         detectedVideo = nil
         activePromptItemID = nil
+        pendingPromptFormat = nil
+        pendingPromptItemID = nil
         onDismiss()
     }
 
@@ -173,16 +189,45 @@ final class YouTubeAudioFeaturePlugin: ClipboardFeaturePlugin {
 
     // MARK: - Helpers
 
-    private func preparePromptStateIfNeeded(for itemID: UUID, link: YouTubeLink) {
+    /// Preferred video quality when opening the prompt from the "Download video" quick action.
+    private var preferredVideoPromptFormat: DownloadFormat {
+        settings.defaultFormat.isVideo ? settings.defaultFormat : .mp4_1080p
+    }
+
+    private func presentVideoPrompt(for item: ClipboardItem, context: FeatureActionContext) {
+        pendingPromptFormat = preferredVideoPromptFormat
+        pendingPromptItemID = item.id
+        context.presentPluginPrompt(pluginID: id, for: item)
+    }
+
+    private func preparePromptStateIfNeeded(
+        for itemID: UUID,
+        link: YouTubeLink,
+        preferredFormat: DownloadFormat? = nil
+    ) {
+        let overrideFormat: DownloadFormat?
+        if let preferredFormat {
+            overrideFormat = preferredFormat
+        } else if pendingPromptItemID == itemID, let pending = pendingPromptFormat {
+            overrideFormat = pending
+            pendingPromptFormat = nil
+            pendingPromptItemID = nil
+        } else {
+            overrideFormat = nil
+        }
+
         if activePromptItemID == itemID,
            let existing = detectedVideo,
            existing.videoID == link.videoID {
+            if let overrideFormat {
+                promptFormat = overrideFormat
+            }
             return
         }
 
         cancelMetadataTask()
         activePromptItemID = itemID
-        promptFormat = settings.defaultFormat
+        promptFormat = overrideFormat ?? settings.defaultFormat
         detectedVideo = DetectedVideo(link: link)
 
         let service = metadataService
@@ -206,7 +251,7 @@ final class YouTubeAudioFeaturePlugin: ClipboardFeaturePlugin {
 
     private func enqueueQuickDownload(
         for link: YouTubeLink,
-        format: AudioFormat,
+        format: DownloadFormat,
         context: FeatureActionContext
     ) {
         let initialVideo: DetectedVideo

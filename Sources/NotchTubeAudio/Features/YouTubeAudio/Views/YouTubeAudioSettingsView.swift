@@ -7,7 +7,7 @@ import AppKit
 import SwiftUI
 
 /// Plugin-specific preferences view for `YouTubeAudioFeaturePlugin`
-/// (destination folder, default MP3/WAV format, and yt-dlp / ffmpeg paths).
+/// (destination folder, default audio/video format, and yt-dlp / ffmpeg paths).
 struct YouTubeAudioSettingsView: View {
     let settings: SettingsManager
 
@@ -42,14 +42,25 @@ struct YouTubeAudioSettingsView: View {
 
                 LabeledContent(L10n.string("youtube.settings.default_format")) {
                     Picker(L10n.string("youtube.settings.default_format"), selection: defaultFormatBinding) {
-                        ForEach(AudioFormat.allCases) { format in
-                            Text(format.displayName).tag(format)
+                        Section(L10n.string("youtube.prompt.format.audio")) {
+                            ForEach(DownloadFormat.audioFormats) { format in
+                                Text(format.displayName).tag(format)
+                            }
+                        }
+                        Section(L10n.string("youtube.settings.default_format.video")) {
+                            ForEach(DownloadFormat.videoFormats) { format in
+                                Text(format.displayName).tag(format)
+                            }
                         }
                     }
-                    .pickerStyle(.segmented)
+                    .pickerStyle(.menu)
                     .labelsHidden()
-                    .frame(width: 160)
+                    .frame(width: 170)
                 }
+
+                Text(L10n.string("youtube.settings.video.ffmpeg_help"))
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
             }
 
             Section(L10n.string("youtube.settings.tools.section")) {
@@ -120,7 +131,7 @@ struct YouTubeAudioSettingsView: View {
 
     // MARK: - Bindings
 
-    private var defaultFormatBinding: Binding<AudioFormat> {
+    private var defaultFormatBinding: Binding<DownloadFormat> {
         Binding(
             get: { settings.defaultFormat },
             set: { settings.defaultFormat = $0 }

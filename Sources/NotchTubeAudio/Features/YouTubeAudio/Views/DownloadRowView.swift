@@ -29,7 +29,7 @@ struct DownloadRowView: View {
                         .foregroundStyle(statusColor)
                         .lineLimit(1)
 
-                    if item.status == .converting {
+                    if item.status == .converting || item.status == .merging {
                         ProgressView()
                             .controlSize(.mini)
                             .tint(.white.opacity(0.6))
@@ -79,7 +79,7 @@ struct DownloadRowView: View {
         switch item.status {
         case .queued:
             return .white.opacity(0.45)
-        case .downloading, .converting:
+        case .downloading, .converting, .merging:
             return .white.opacity(0.80)
         case .completed:
             return .green.opacity(0.90)
@@ -121,15 +121,17 @@ struct DownloadRowView: View {
     }
 }
 
-/// MP3 / WAV badge with a stable width so titles align.
+/// Format badge (`MP3`, `WAV`, `720p`, `1080p`) with a stable width so titles align.
 struct FormatBadge: View {
-    let format: AudioFormat
+    let format: DownloadFormat
 
     var body: some View {
-        Text(format.displayName)
+        Text(format.shortBadge)
             .font(.system(size: 8.5, weight: .heavy, design: .rounded))
+            .lineLimit(1)
+            .minimumScaleFactor(0.85)
             .foregroundStyle(tint)
-            .frame(width: 30, height: 18)
+            .frame(width: 38, height: 18)
             .background {
                 Capsule().fill(tint.opacity(0.16))
             }
@@ -145,6 +147,10 @@ struct FormatBadge: View {
             return .green
         case .wav:
             return .cyan
+        case .mp4_720p:
+            return .orange
+        case .mp4_1080p:
+            return .purple
         }
     }
 }

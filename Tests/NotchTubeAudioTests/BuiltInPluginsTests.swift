@@ -263,6 +263,7 @@ struct BuiltInPluginsTests {
         #expect(combinedQuickActions.map(\.title) == [
             "Descargar MP3",
             "Descargar WAV",
+            "Descargar vídeo",
             "Limpiar URL (quitar tracking)"
         ])
 
@@ -276,5 +277,159 @@ struct BuiltInPluginsTests {
         registry.setPluginEnabled(urlCleanerPlugin.id, true)
         registry.setTriggerBehavior(.automaticPrompt, for: urlCleanerPlugin.id)
         #expect(registry.primaryPromptPlugin(for: trackedYouTubeItem)?.id == urlCleanerPlugin.id)
+    }
+
+    // MARK: - 5. YouTube Audio & Video Formats and Prompt Behavior
+
+    @Test func downloadFormatExposesExpectedKindsExtensionsAndBadges() {
+        let previousLanguage = forceSpanishLanguage()
+        defer { L10n.currentLanguage = previousLanguage }
+
+        #expect(DownloadFormat.allCases == [.mp3, .wav, .mp4_720p, .mp4_1080p])
+        #expect(DownloadFormat.audioFormats == [.mp3, .wav])
+        #expect(DownloadFormat.videoFormats == [.mp4_720p, .mp4_1080p])
+
+        #expect(DownloadFormat.mp3.kind == .audio)
+        #expect(DownloadFormat.mp3.fileExtension == "mp3")
+        #expect(DownloadFormat.mp3.shortBadge == "MP3")
+        #expect(DownloadFormat.mp3.maxVideoHeight == nil)
+
+        #expect(DownloadFormat.wav.kind == .audio)
+        #expect(DownloadFormat.wav.fileExtension == "wav")
+        #expect(DownloadFormat.wav.shortBadge == "WAV")
+        #expect(DownloadFormat.wav.maxVideoHeight == nil)
+
+        #expect(DownloadFormat.mp4_720p.kind == .video)
+        #expect(DownloadFormat.mp4_720p.fileExtension == "mp4")
+        #expect(DownloadFormat.mp4_720p.shortBadge == "720p")
+        #expect(DownloadFormat.mp4_720p.displayName == "MP4 720p")
+        #expect(DownloadFormat.mp4_720p.maxVideoHeight == 720)
+
+        #expect(DownloadFormat.mp4_1080p.kind == .video)
+        #expect(DownloadFormat.mp4_1080p.fileExtension == "mp4")
+        #expect(DownloadFormat.mp4_1080p.shortBadge == "1080p")
+        #expect(DownloadFormat.mp4_1080p.displayName == "MP4 1080p")
+        #expect(DownloadFormat.mp4_1080p.maxVideoHeight == 1080)
+    }
+
+    @Test func notchPromptViewShowsDynamicPrimaryButtonTitleForAudioAndVideo() throws {
+        let ytURL = try #require(URL(string: "https://www.youtube.com/watch?v=dQw4w9WgXcQ"))
+        let video = DetectedVideo(
+            videoID: "dQw4w9WgXcQ",
+            canonicalURL: ytURL,
+            title: "Demo Video",
+            authorName: "Channel",
+            thumbnailURL: nil,
+            isLoading: false
+        )
+
+        L10n.withLanguage(.spanish) {
+            let audioPrompt = NotchPromptView(
+                video: video,
+                format: .mp3,
+                binariesAvailable: true,
+                onSelectFormat: { _ in },
+                onSave: {},
+                onCancel: {}
+            )
+            let videoPrompt = NotchPromptView(
+                video: video,
+                format: .mp4_1080p,
+                binariesAvailable: true,
+                onSelectFormat: { _ in },
+                onSave: {},
+                onCancel: {}
+            )
+            #expect(audioPrompt.primaryActionTitle == "Guardar audio")
+            #expect(videoPrompt.primaryActionTitle == "Guardar vídeo")
+        }
+
+        L10n.withLanguage(.english) {
+            let audioPrompt = NotchPromptView(
+                video: video,
+                format: .wav,
+                binariesAvailable: true,
+                onSelectFormat: { _ in },
+                onSave: {},
+                onCancel: {}
+            )
+            let videoPrompt = NotchPromptView(
+                video: video,
+                format: .mp4_720p,
+                binariesAvailable: true,
+                onSelectFormat: { _ in },
+                onSave: {},
+                onCancel: {}
+            )
+            #expect(audioPrompt.primaryActionTitle == "Save audio")
+            #expect(videoPrompt.primaryActionTitle == "Save video")
+        }
+    }
+
+    @Test func videoQuickActionOpensPromptWithVideoPreselectedEvenInHistoryActionOnlyMode() throws {
+        let previousLanguage = forceSpanishLanguage()
+        defer { L10n.currentLanguage = previousLanguage }
+
+        let (settings, defaults, suiteName) = try makeIsolatedSettings()
+        defer { defaults.removePersistentDomain(forName: suiteName) }
+
+        settings.defaultFormat = .mp3
+        settings.persistClipboardHistory = false
+
+        let tempDir = FileManager.default.temporaryDirectory
+            .appendingPathComponent("NotchTubeVideoQuickAction-\(UUID().uuidString)", isDirectory: true)
+        defer { try? FileManager.default.removeItem(at: tempDir) }
+
+        let storage = ClipboardStorage(baseDirectory: tempDir, debounceInterval: 0)
+        let historyStore = ClipboardHistoryStore(
+            settings: settings,
+            storage: storage,
+            pasteboard: MockPasteboard()
+        )
+        let youtubePlugin = YouTubeAudioFeaturePlugin(settings: settings)
+        let registry = FeatureRegistry(settings: settings, plugins: [youtubePlugin])
+        registry.setTriggerBehavior(.historyActionOnly, for: youtubePlugin.id)
+
+        let appState = AppState(
+            settings: settings,
+            historyStore: historyStore,
+            featureRegistry: registry
+        )
+
+        let ytItem = try makeURLItem("https://www.youtube.com/watch?v=dQw4w9WgXcQ")
+        appState.handleCapturedItem(ytItem)
+
+        // In .historyActionOnly mode, automatic prompt does NOT open on copy.
+        #expect(appState.notchMode == .idle)
+
+        let storedItem = try #require(historyStore.items.first)
+        let actions = youtubePlugin.quickActions(for: storedItem, context: appState.actionContext)
+        let videoAction = try #require(actions.first(where: { $0.title == "Descargar vídeo" }))
+
+        // Trigger "Descargar vídeo" quick action -> opens prompt with video preselected.
+        videoAction.handler()
+        #expect(appState.notchMode == .promptingFeature(pluginID: youtubePlugin.id, item: storedItem))
+        #expect(youtubePlugin.promptFormat.isVideo == true)
+        #expect(youtubePlugin.promptFormat == .mp4_1080p)
+
+        // Calling makePromptView again (as NotchRootView does on render) must NOT reset to MP3.
+        let renderedPrompt = youtubePlugin.makePromptView(
+            for: storedItem,
+            context: appState.actionContext,
+            onComplete: {},
+            onDismiss: {}
+        )
+        #expect(renderedPrompt != nil)
+        #expect(youtubePlugin.promptFormat == .mp4_1080p)
+
+        // Switching format while prompt is open is preserved across re-renders.
+        youtubePlugin.promptFormat = .mp4_720p
+        _ = youtubePlugin.makePromptView(
+            for: storedItem,
+            context: appState.actionContext,
+            onComplete: {},
+            onDismiss: {}
+        )
+        #expect(youtubePlugin.promptFormat == .mp4_720p)
     }
 }

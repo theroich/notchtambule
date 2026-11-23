@@ -172,10 +172,10 @@ struct LocalizationTests {
             #expect(textItem.previewSubtitle == "Notes · 11 characters")
 
             // Plugins & quick actions
-            #expect(youtubePlugin.displayName == "YouTube Audio")
+            #expect(youtubePlugin.displayName == "YouTube Audio & Video")
             #expect(youtubePlugin.activityPanelTitle == "Downloads")
             let ytActions = youtubePlugin.quickActions(for: ytItem, context: .noop)
-            #expect(ytActions.map(\.title) == ["Download MP3", "Download WAV"])
+            #expect(ytActions.map(\.title) == ["Download MP3", "Download WAV", "Download video"])
 
             #expect(urlCleanerPlugin.displayName == "URL Cleaner")
             let cleanContext = FeatureActionContext.noop
@@ -201,6 +201,8 @@ struct LocalizationTests {
             #expect(downloadItem.statusText == "Downloading 42%")
             downloadItem.status = .converting
             #expect(downloadItem.statusText == "Converting…")
+            downloadItem.status = .merging
+            #expect(downloadItem.statusText == "Merging…")
             downloadItem.status = .completed
             #expect(downloadItem.statusText == "Completed")
             downloadItem.status = .failed
@@ -230,7 +232,10 @@ struct LocalizationTests {
             #expect(filesItem.previewSubtitle == "Finder · 2 archivos")
             #expect(textItem.previewSubtitle == "Notes · 11 caracteres")
 
+            #expect(youtubePlugin.displayName == "YouTube Audio y Vídeo")
             #expect(youtubePlugin.activityPanelTitle == "Descargas")
+            let esYTActions = youtubePlugin.quickActions(for: ytItem, context: .noop)
+            #expect(esYTActions.map(\.title) == ["Descargar MP3", "Descargar WAV", "Descargar vídeo"])
             #expect(urlCleanerPlugin.displayName == "Limpiador de URLs")
             #expect(jsonFormatterPlugin.displayName == "Formateador JSON")
             #expect(colorConverterPlugin.displayName == "Conversor de Color")
@@ -240,6 +245,8 @@ struct LocalizationTests {
             downloadItem.status = .downloading
             downloadItem.progress = 0.42
             #expect(downloadItem.statusText == "Descargando 42%")
+            downloadItem.status = .merging
+            #expect(downloadItem.statusText == "Combinando…")
         }
     }
 
@@ -387,6 +394,63 @@ struct LocalizationTests {
                 pillsHosting.layoutSubtreeIfNeeded()
                 #expect(pillsHosting.fittingSize.height > 0)
                 #expect(pillsHosting.fittingSize.height <= 40)
+            }
+            await Task.yield()
+            L10n.withLanguage(language, pseudolocalized: pseudo) {
+                let ytURL = URL(string: "https://www.youtube.com/watch?v=dQw4w9WgXcQ")!
+                let sampleVideo = DetectedVideo(
+                    videoID: "dQw4w9WgXcQ",
+                    canonicalURL: ytURL,
+                    title: "A Very Descriptive YouTube Video Title For Layout Testing",
+                    authorName: "Sample Channel",
+                    thumbnailURL: nil,
+                    isLoading: false
+                )
+
+                let audioPromptHosting = NSHostingView(
+                    rootView: NotchPromptView(
+                        video: sampleVideo,
+                        format: .mp3,
+                        binariesAvailable: true,
+                        onSelectFormat: { _ in },
+                        onSave: {},
+                        onCancel: {}
+                    )
+                    .frame(width: NotchMetrics.contentWidth)
+                )
+                audioPromptHosting.layoutSubtreeIfNeeded()
+
+                let videoPromptHosting = NSHostingView(
+                    rootView: NotchPromptView(
+                        video: sampleVideo,
+                        format: .mp4_1080p,
+                        binariesAvailable: true,
+                        onSelectFormat: { _ in },
+                        onSave: {},
+                        onCancel: {}
+                    )
+                    .frame(width: NotchMetrics.contentWidth)
+                )
+                videoPromptHosting.layoutSubtreeIfNeeded()
+
+                #expect(audioPromptHosting.fittingSize.width <= NotchMetrics.contentWidth)
+                #expect(videoPromptHosting.fittingSize.width <= NotchMetrics.contentWidth)
+                #expect(abs(audioPromptHosting.fittingSize.height - videoPromptHosting.fittingSize.height) <= 2)
+
+                let videoItem = DownloadItem(video: sampleVideo, format: .mp4_1080p)
+                videoItem.status = .merging
+                let rowHosting = NSHostingView(
+                    rootView: DownloadRowView(
+                        item: videoItem,
+                        onCancel: {},
+                        onReveal: {},
+                        onRetry: {}
+                    )
+                    .frame(width: NotchMetrics.contentWidth)
+                )
+                rowHosting.layoutSubtreeIfNeeded()
+                #expect(rowHosting.fittingSize.width <= NotchMetrics.contentWidth)
+                #expect(rowHosting.fittingSize.height == 58)
             }
             await Task.yield()
             L10n.withLanguage(language, pseudolocalized: pseudo) {
