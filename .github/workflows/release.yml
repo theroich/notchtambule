@@ -1,0 +1,298 @@
+name: Release
+
+# Dos formas de publicar una versión:
+#   1. Manual (recomendado): Actions → Release → Run workflow, elige el incremento
+#      (patch/minor/major) o una versión explícita. El workflow actualiza
+#      Info.plist, crea el tag `vX.Y.Z`, compila y publica la release.
+#   2. Push de un tag `vX.Y.Z` ya existente.
+
+on:
+  push:
+    tags:
+      - "v*.*.*"
+  workflow_dispatch:
+    inputs:
+      bump:
+        description: "Incremento respecto a la última versión publicada"
+        type: choice
+        options:
+          - patch
+          - minor
+          - major
+          - none
+        default: patch
+      version:
+        description: "Versión explícita X.Y.Z (tiene prioridad sobre el incremento)"
+        type: string
+        required: false
+        default: ""
+      prerelease:
+        description: "Publicar como pre-release"
+        type: boolean
+        default: false
+      dry_run:
+        description: "Solo compilar y subir artefactos (sin commit, tag ni release)"
+        type: boolean
+        default: false
+
+permissions:
+  contents: write
+
+concurrency:
+  group: release
+  cancel-in-progress: false
+
+env:
+  APP_NAME: Notchtambule
+
+jobs:
+  # ---------------------------------------------------------------------------
+  # 1. Calcula la versión, sincroniza Info.plist y crea el tag
+  # ---------------------------------------------------------------------------
+  version:
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.calc.outputs.version }}
+      tag: ${{ steps.calc.outputs.tag }}
+      ref: ${{ steps.calc.outputs.ref }}
+      build: ${{ steps.calc.outputs.build }}
+      dry_run: ${{ steps.calc.outputs.dry_run }}
+      prerelease: ${{ steps.calc.outputs.prerelease }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          fetch-tags: true
+
+      - name: Calcular versión
+        id: calc
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          REF_TYPE: ${{ github.ref_type }}
+          REF_NAME: ${{ github.ref_name }}
+          INPUT_BUMP: ${{ inputs.bump }}
+          INPUT_VERSION: ${{ inputs.version }}
+          INPUT_PRERELEASE: ${{ inputs.prerelease }}
+          INPUT_DRY_RUN: ${{ inputs.dry_run }}
+          BUILD_NUMBER: ${{ github.run_number }}
+          SHA: ${{ github.sha }}
+        run: |
+          set -euo pipefail
+
+          current_in_plist() {
+            python3 - <<'PY'
+          import re, pathlib
+          text = pathlib.Path("Info.plist").read_text()
+          m = re.search(r"<key>CFBundleShortVersionString</key>\s*<string>([^<]*)</string>", text)
+          print(m.group(1) if m else "0.0.0")
+          PY
+          }
+
+          # Versión más alta entre la última release publicada y el Info.plist.
+          latest_tag="$(git tag --list 'v[0-9]*' --sort=-v:refname | head -n 1 || true)"
+          base="${latest_tag#v}"
+          plist_version="$(current_in_plist)"
+          if [[ -z "$base" ]] || [[ "$(printf '%s\n%s\n' "$base" "$plist_version" | sort -V | tail -n 1)" == "$plist_version" ]]; then
+            base="$plist_version"
+          fi
+          base="${base%%-*}"
+
+          if [[ "$REF_TYPE" == "tag" ]]; then
+            version="${REF_NAME#v}"
+          elif [[ -n "$INPUT_VERSION" ]]; then
+            version="$INPUT_VERSION"
+          else
+            IFS='.' read -r major minor patch <<< "$base"
+            major="${major:-0}"; minor="${minor:-0}"; patch="${patch:-0}"
+            case "${INPUT_BUMP:-patch}" in
+              major) major=$((major + 1)); minor=0; patch=0 ;;
+              minor) minor=$((minor + 1)); patch=0 ;;
+              patch) patch=$((patch + 1)) ;;
+              none) ;;
+              *) echo "::error::Incremento desconocido: ${INPUT_BUMP}"; exit 1 ;;
+            esac
+            version="${major}.${minor}.${patch}"
+          fi
+
+          version="${version#v}"
+          if [[ ! "$version" =~ ^[0-9]+\.[0-9]+\.[0-9]+([-+][0-9A-Za-z.-]+)?$ ]]; then
+            echo "::error::Versión no válida: '$version' (se espera X.Y.Z)"
+            exit 1
+          fi
+
+          dry_run="${INPUT_DRY_RUN:-false}"
+          echo "version=$version"   >> "$GITHUB_OUTPUT"
+          echo "tag=v$version"      >> "$GITHUB_OUTPUT"
+          echo "build=$BUILD_NUMBER" >> "$GITHUB_OUTPUT"
+          echo "dry_run=$dry_run"   >> "$GITHUB_OUTPUT"
+          echo "prerelease=${INPUT_PRERELEASE:-false}" >> "$GITHUB_OUTPUT"
+          if [[ "$dry_run" == "true" ]]; then
+            echo "ref=$SHA" >> "$GITHUB_OUTPUT"
+          else
+            echo "ref=v$version" >> "$GITHUB_OUTPUT"
+          fi
+          echo "Versión: $version (base $base, dry_run=$dry_run)"
+
+      - name: Sincronizar Info.plist y crear el tag
+        if: ${{ steps.calc.outputs.dry_run != 'true' && github.ref_type != 'tag' }}
+        env:
+          VERSION: ${{ steps.calc.outputs.version }}
+          TAG: ${{ steps.calc.outputs.tag }}
+          APP_NAME: ${{ env.APP_NAME }}
+          DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
+        run: |
+          set -euo pipefail
+
+          python3 - "$VERSION" <<'PY'
+          import pathlib, re, sys
+          version = sys.argv[1]
+          path = pathlib.Path("Info.plist")
+          text = path.read_text()
+          pattern = r"(<key>CFBundleShortVersionString</key>\s*<string>)[^<]*(</string>)"
+          new = re.sub(pattern, lambda m: f"{m.group(1)}{version}{m.group(2)}", text, count=1)
+          if new == text:
+              print("Info.plist ya tenía esa versión")
+          else:
+              path.write_text(new)
+              print(f"Info.plist -> {version}")
+          PY
+
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+          if ! git diff --quiet -- Info.plist; then
+            git add Info.plist
+            git commit -m "chore(release): $TAG"
+            git push origin "HEAD:$DEFAULT_BRANCH"
+          fi
+
+          if git rev-parse -q --verify "refs/tags/$TAG" >/dev/null; then
+            echo "El tag $TAG ya existe; se reutiliza."
+          else
+            git tag -a "$TAG" -m "$APP_NAME $VERSION"
+            git push origin "$TAG"
+          fi
+
+  # ---------------------------------------------------------------------------
+  # 2. Compila, empaqueta y publica
+  # ---------------------------------------------------------------------------
+  release:
+    needs: version
+    runs-on: macos-15
+    env:
+      APP_VERSION: ${{ needs.version.outputs.version }}
+      BUILD_NUMBER: ${{ needs.version.outputs.build }}
+      TAG: ${{ needs.version.outputs.tag }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          ref: ${{ needs.version.outputs.ref }}
+
+      - name: Seleccionar el Xcode más reciente
+        run: |
+          set -euo pipefail
+          latest="$(ls -d /Applications/Xcode*.app 2>/dev/null | sort -V | tail -n 1 || true)"
+          if [[ -z "$latest" ]]; then
+            echo "::error::No hay Xcode instalado en el runner."
+            exit 1
+          fi
+          sudo xcode-select -s "$latest/Contents/Developer"
+          xcode-select -p
+          xcodebuild -version
+          swift --version
+
+      - name: Tests
+        run: swift test
+
+      - name: Compilar el bundle
+        run: ./Scripts/build-app.sh release
+
+      - name: Empaquetar (.zip, .dmg y checksums)
+        run: |
+          set -euo pipefail
+          APP="build/$APP_NAME.app"
+          mkdir -p dist
+          /usr/libexec/PlistBuddy -c "Print :CFBundleShortVersionString" "$APP/Contents/Info.plist"
+          /usr/libexec/PlistBuddy -c "Print :CFBundleVersion" "$APP/Contents/Info.plist"
+
+          ditto -c -k --sequesterRsrc --keepParent "$APP" "dist/$APP_NAME-$APP_VERSION.zip"
+
+          stage="$(mktemp -d)"
+          cp -R "$APP" "$stage/"
+          ln -s /Applications "$stage/Applications"
+          hdiutil create -quiet -volname "$APP_NAME" -srcfolder "$stage" -ov -format UDZO \
+            "dist/$APP_NAME-$APP_VERSION.dmg"
+          rm -rf "$stage"
+
+          (cd dist && shasum -a 256 "$APP_NAME-$APP_VERSION.zip" "$APP_NAME-$APP_VERSION.dmg" > SHA256SUMS.txt)
+          ls -lh dist
+
+      - name: Subir artefactos
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ env.APP_NAME }}-${{ env.APP_VERSION }}
+          path: dist/*
+          if-no-files-found: error
+
+      - name: Preparar notas de la release
+        if: ${{ needs.version.outputs.dry_run != 'true' }}
+        run: |
+          set -euo pipefail
+          prev_tag="$(git tag --list 'v[0-9]*' --sort=-v:refname | grep -v "^$TAG$" | head -n 1 || true)"
+          {
+            echo "## $APP_NAME $APP_VERSION"
+            echo
+            echo "### Instalación"
+            echo
+            echo "1. Descarga \`$APP_NAME-$APP_VERSION.dmg\` (o el \`.zip\`) y arrastra **$APP_NAME.app** a \`/Applications\`."
+            echo "2. La app está firmada en modo ad-hoc (sin notarizar), así que la primera vez macOS puede bloquearla."
+            echo "   Ábrela con clic derecho → **Abrir**, o elimina la cuarentena:"
+            echo
+            echo '   ```bash'
+            echo "   xattr -dr com.apple.quarantine \"/Applications/$APP_NAME.app\""
+            echo '   ```'
+            echo
+            echo "3. Instala las dependencias del módulo de audio de YouTube:"
+            echo
+            echo '   ```bash'
+            echo "   brew install yt-dlp ffmpeg"
+            echo '   ```'
+            echo
+            echo "4. Para el pegado automático concede **Accesibilidad** en Ajustes del Sistema → Privacidad y seguridad."
+            echo
+            echo "### Cambios"
+            echo
+            if [[ -n "$prev_tag" ]]; then
+              echo "\`$prev_tag..$TAG\`"
+              echo
+              git log --no-merges --pretty='- %s (`%h`)' "$prev_tag..HEAD"
+            else
+              git log --no-merges --pretty='- %s (`%h`)' "$TAG"
+            fi
+            echo
+            echo "### Verificación"
+            echo
+            echo '```'
+            cat dist/SHA256SUMS.txt
+            echo '```'
+          } > dist/release-notes.md
+
+      - name: Publicar GitHub Release
+        if: ${{ needs.version.outputs.dry_run != 'true' }}
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PRERELEASE: ${{ needs.version.outputs.prerelease }}
+        run: |
+          set -euo pipefail
+          args=(--title "$APP_NAME $APP_VERSION" --notes-file dist/release-notes.md)
+          if [[ "$PRERELEASE" == "true" ]]; then
+            args+=(--prerelease)
+          fi
+          if gh release view "$TAG" >/dev/null 2>&1; then
+            gh release upload "$TAG" dist/*.zip dist/*.dmg dist/SHA256SUMS.txt --clobber
+            gh release edit "$TAG" "${args[@]}"
+          else
+            gh release create "$TAG" dist/*.zip dist/*.dmg dist/SHA256SUMS.txt "${args[@]}"
+          fi
+          gh release view "$TAG" --json url --jq '"Publicada: " + .url'
