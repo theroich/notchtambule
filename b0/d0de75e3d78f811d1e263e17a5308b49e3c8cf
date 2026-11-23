@@ -1,0 +1,38 @@
+README.md
+  h_c714c5d6d16f81 63
+Sources/NotchTubeAudio/App/AppEnvironment.swift
+  h_c714c5d6d16f81 21,42,54-55,74
+Sources/NotchTubeAudio/Features/OCR/Models/OCRResult.swift
+  h_c714c5d6d16f81 1-109
+Sources/NotchTubeAudio/Features/OCR/OCRFeaturePlugin.swift
+  h_c714c5d6d16f81 1-92
+Sources/NotchTubeAudio/Features/OCR/OCRSettingsStore.swift
+  h_c714c5d6d16f81 1-117
+Sources/NotchTubeAudio/Features/OCR/Services/OCRServicing.swift
+  h_c714c5d6d16f81 1-16
+Sources/NotchTubeAudio/Features/OCR/Services/VisionOCRService.swift
+  h_c714c5d6d16f81 1-199
+Sources/NotchTubeAudio/Features/OCR/Views/OCRPromptView.swift
+  h_c714c5d6d16f81 1-358
+Sources/NotchTubeAudio/Features/OCR/Views/OCRSettingsView.swift
+  h_c714c5d6d16f81 1-117
+Sources/NotchTubeAudio/Resources/Localizable.xcstrings
+  h_c714c5d6d16f81 1381-1737
+Sources/NotchTubeAudio/Views/SettingsView.swift
+  h_c714c5d6d16f81 71-72
+Tests/NotchTubeAudioTests/OCRFeaturePluginTests.swift
+  h_c714c5d6d16f81 1-405
+doc/arquitectura.md
+  h_c714c5d6d16f81 22,27,254
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.6",
+  "base_commit_sha": "b0d0de75e3d78f811d1e263e17a5308b49e3c8cf",
+  "prompts": {},
+  "humans": {
+    "h_c714c5d6d16f81": {
+      "author": "roicastrocasal <roicc@inditex.com>"
+    }
+  }
+}
