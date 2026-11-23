@@ -1,0 +1,23 @@
+.github/workflows/release.yml
+  s_f673b715fd94f3::t_c3e3449a99dda5 1-298
+.gitignore
+  s_f673b715fd94f3::t_6ec204693f69d0 8
+README.md
+  s_f673b715fd94f3::t_5c4f107903f4db 239-275
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.6",
+  "base_commit_sha": "2057d91702445231f8d368c7adbfc31ec20a6b71",
+  "prompts": {},
+  "sessions": {
+    "s_f673b715fd94f3": {
+      "agent_id": {
+        "tool": "pi",
+        "id": "01a204e4-5d49-72fb-8336-15f4d8d5f701",
+        "model": "deepseek-v4.1-flash"
+      },
+      "human_author": "roicastrocasal <roicc@inditex.com>"
+    }
+  }
+}
