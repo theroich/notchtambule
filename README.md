@@ -236,6 +236,43 @@ La suite de tests unitarios verifica sin tocar la red:
 
 ---
 
+## Versionado y releases
+
+La versión vive en `Info.plist` (`CFBundleShortVersionString`) y cada release se publica como tag `vX.Y.Z` con artefactos `.dmg`, `.zip` y `SHA256SUMS.txt`.
+
+### Publicar una versión (recomendado)
+
+1. GitHub → **Actions** → **Release** → **Run workflow**.
+2. Elige `bump`: `patch` (1.0.0 → 1.0.1), `minor` (1.0.0 → 1.1.0), `major` (1.0.0 → 2.0.0) o `none`.
+   También puedes escribir una `version` explícita (`1.4.2`), que tiene prioridad sobre `bump`.
+3. El workflow:
+   - calcula la versión a partir del último tag `v*` y de `Info.plist`,
+   - actualiza `Info.plist`, hace commit `chore(release): vX.Y.Z` en `main` y crea el tag,
+   - compila en macOS con `Scripts/build-app.sh release`, pasando `APP_VERSION` y `BUILD_NUMBER`,
+   - ejecuta `swift test` como puerta previa,
+   - publica la GitHub Release con las notas y los checksums.
+
+### Publicar desde un tag existente
+
+```bash
+git tag -a v1.2.0 -m "Notchtambule 1.2.0"
+git push origin v1.2.0
+```
+
+El workflow se dispara con el push del tag y publica esa versión (no hace commit de `Info.plist`, así que el camino recomendado sigue siendo **Run workflow**).
+
+### Dry run
+
+**Run workflow** con `dry_run` activo: compila, ejecuta tests y sube los artefactos a la pestaña *Actions* sin crear commit, tag ni release.
+
+### Build local con versión concreta
+
+```bash
+APP_VERSION=1.4.0 BUILD_NUMBER=42 ./Scripts/build-app.sh release
+```
+
+---
+
 ## Solución de problemas
 
 **«No se encontró yt-dlp/ffmpeg»**
