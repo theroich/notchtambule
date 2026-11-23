@@ -1,0 +1,26 @@
+Tests/NotchTubeAudioTests/AutoPasteServiceTests.swift
+  h_c714c5d6d16f81 336-338,416-418
+Tests/NotchTubeAudioTests/BuiltInPluginsTests.swift
+  h_c714c5d6d16f81 58-60,173-175,225-227
+Tests/NotchTubeAudioTests/ClipboardMonitorTests.swift
+  h_c714c5d6d16f81 193-195,219-221
+Tests/NotchTubeAudioTests/ClipboardNotchUITests.swift
+  h_c714c5d6d16f81 188-190,306-308,450-452
+Tests/NotchTubeAudioTests/DownloadManagerTests.swift
+  h_c714c5d6d16f81 204-206
+Tests/NotchTubeAudioTests/SettingsManagerTests.swift
+  h_c714c5d6d16f81 255-257
+Tests/NotchTubeAudioTests/TestLanguageSupport.swift
+  h_c714c5d6d16f81 1-19
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.6",
+  "base_commit_sha": "b95c6868b9138c4a66822cfc9e4fa4fad4c496fe",
+  "prompts": {},
+  "humans": {
+    "h_c714c5d6d16f81": {
+      "author": "roicastrocasal <roicc@inditex.com>"
+    }
+  }
+}
