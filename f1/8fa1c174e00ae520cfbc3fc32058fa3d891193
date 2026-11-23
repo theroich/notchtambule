@@ -1,0 +1,26 @@
+README.md
+  h_c714c5d6d16f81 1-3,5,7-9,11-15,19,21,23,25,27-31,33,35,37-45,47,49-53,55,57,59-62,64-68,70,72-76,78,80,82-86,88-90,92,94-96,98,100,102,104-108,110,112-116,118,120,122,125-126,128-130,132,135,138,140,142,144-145,147,149,151-158
+doc/README.md
+  h_c714c5d6d16f81 1-66
+doc/api-plugins.md
+  h_c714c5d6d16f81 1-475
+doc/arquitectura.md
+  h_c714c5d6d16f81 1-256
+doc/como-crear-extensiones.md
+  h_c714c5d6d16f81 1-446
+doc/desarrollo.md
+  h_c714c5d6d16f81 1-245
+doc/estructura.md
+  h_c714c5d6d16f81 1-150
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.6",
+  "base_commit_sha": "f18fa1c174e00ae520cfbc3fc32058fa3d891193",
+  "prompts": {},
+  "humans": {
+    "h_c714c5d6d16f81": {
+      "author": "roicastrocasal <roicc@inditex.com>"
+    }
+  }
+}
