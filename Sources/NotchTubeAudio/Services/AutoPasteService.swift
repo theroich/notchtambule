@@ -124,7 +124,10 @@ final class RunningApplicationTarget: AutoPasteTargetApplication {
 
     @discardableResult
     func activate() -> Bool {
-        runningApplication.activate(options: [.activateAllWindows])
+        if NSApp.isActive {
+            NSApp.yieldActivation(to: runningApplication)
+        }
+        return runningApplication.activate(options: [.activateAllWindows])
     }
 }
 
@@ -185,7 +188,9 @@ final class SystemAutoPasteEnvironment: AutoPasteSystemEnvironment {
 
     func postCommandVKeystrokes() -> Bool {
         let vKeyCode = CGKeyCode(kVK_ANSI_V) // 0x09
-        guard let source = CGEventSource(stateID: .combinedSessionState),
+        // Prefer `.privateState` so physical mouse button / modifier states from the
+        // click that triggered auto-paste do not bleed into the synthesized ⌘V event.
+        guard let source = CGEventSource(stateID: .privateState) ?? CGEventSource(stateID: .hidSystemState),
               let keyDown = CGEvent(keyboardEventSource: source, virtualKey: vKeyCode, keyDown: true),
               let keyUp = CGEvent(keyboardEventSource: source, virtualKey: vKeyCode, keyDown: false) else {
             return false
@@ -195,6 +200,7 @@ final class SystemAutoPasteEnvironment: AutoPasteSystemEnvironment {
         keyUp.flags = .maskCommand
 
         keyDown.post(tap: .cghidEventTap)
+        usleep(10_000)
         keyUp.post(tap: .cghidEventTap)
         return true
     }
@@ -218,10 +224,11 @@ final class AutoPasteService {
 
     /// The most recently remembered external frontmost application.
     private(set) var rememberedApp: (any AutoPasteTargetApplication)?
+    private var workspaceActivationObserver: NSObjectProtocol?
 
     /// Delay in milliseconds after hiding the notch and activating the target application
     /// before checking focus / posting `⌘V`.
-    var postActivationDelayMilliseconds: Int = 55
+    var postActivationDelayMilliseconds: Int = 80
     /// Maximum number of additional poll attempts waiting for the target app to become frontmost.
     var maxFocusWaitAttempts: Int = 4
     /// Poll interval in milliseconds between focus checks.
@@ -261,6 +268,41 @@ final class AutoPasteService {
     }
 
     // MARK: - Frontmost Application Tracking
+
+    /// Starts observing `NSWorkspace.didActivateApplicationNotification` so the last
+    /// external application is always tracked, even when the user opens the menu bar
+    /// or Settings window before clicking a clipboard history entry.
+    func startObservingFrontmostApplications(workspace: NSWorkspace = .shared) {
+        guard workspaceActivationObserver == nil else { return }
+
+        rememberFrontmostApp()
+        workspaceActivationObserver = workspace.notificationCenter.addObserver(
+            forName: NSWorkspace.didActivateApplicationNotification,
+            object: nil,
+            queue: .main
+        ) { [weak self] notification in
+            guard let app = notification.userInfo?[NSWorkspace.applicationUserInfoKey] as? NSRunningApplication else {
+                return
+            }
+            Task { @MainActor [weak self] in
+                self?.recordActivatedApplication(RunningApplicationTarget(app))
+            }
+        }
+    }
+
+    /// Stops observing workspace application activations.
+    func stopObservingFrontmostApplications(workspace: NSWorkspace = .shared) {
+        if let observer = workspaceActivationObserver {
+            workspace.notificationCenter.removeObserver(observer)
+            workspaceActivationObserver = nil
+        }
+    }
+
+    /// Records an externally activated application if it is not our own process.
+    func recordActivatedApplication(_ app: any AutoPasteTargetApplication) {
+        guard !isSelfApplication(app), !app.isTerminated else { return }
+        rememberedApp = app
+    }
 
     /// Captures the application that currently holds focus before the notch interacts with the user.
     /// If our own process happens to be frontmost (e.g. Settings window), keeps the previously
@@ -305,9 +347,11 @@ final class AutoPasteService {
             return .copiedOnly(reason: .noTargetApplication)
         }
 
-        if !target.isActive {
-            _ = target.activate()
-        }
+        // Always activate the target app, even if `target.isActive` already reports `true`:
+        // a `.nonactivatingPanel` (like the notch) can take key-window focus without
+        // deactivating the underlying application, so explicitly re-activating helps
+        // restore key focus cleanly before posting ⌘V.
+        _ = target.activate()
 
         await environment.sleep(milliseconds: postActivationDelayMilliseconds)
 

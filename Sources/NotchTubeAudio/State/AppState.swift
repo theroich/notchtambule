@@ -18,12 +18,19 @@ protocol NotchPresenting: AnyObject {
     func presentPanel(autoHideAfter seconds: TimeInterval?)
     /// Collapse the notch.
     func hide()
+    /// Immediately dismisses the notch panel and relinquishes key-window focus
+    /// before synthesizing `⌘V` into the previously active application.
+    func hideImmediatelyForAutoPaste() async
 }
 
 extension NotchPresenting {
     /// Backward-compatible alias for `presentPanel(autoHideAfter:)`.
     func presentDownloads(autoHideAfter seconds: TimeInterval?) {
         presentPanel(autoHideAfter: seconds)
+    }
+
+    func hideImmediatelyForAutoPaste() async {
+        hide()
     }
 }
 
@@ -271,19 +278,29 @@ final class AppState {
             return result
         }
 
-        // Collapse the notch first so any auto-hide timer is cancelled and focus returns cleanly
-        // to the target application before posting ⌘V.
-        hideNotch()
+        // Collapse the notch immediately and relinquish key-window focus before
+        // activating the target application and posting ⌘V. DynamicNotch.hide()
+        // animates for ~400ms before closing its NSPanel; ordering the panel out
+        // synchronously prevents the synthesized ⌘V from being swallowed by the notch.
+        await hideNotchForAutoPaste()
 
         let result = await autoPasteService.paste()
         lastPasteResult = result
 
-        if case .copiedOnly(let reason) = result,
-           let message = reason.userFacingMessage {
+        if result.didPaste {
+            activeNotification = nil
+        } else if case .copiedOnly(let reason) = result,
+                  let message = reason.userFacingMessage {
             notifyUser(message: message, icon: "info.circle.fill")
         }
 
         return result
+    }
+
+    private func hideNotchForAutoPaste() async {
+        guard notchMode != .idle else { return }
+        notchMode = .idle
+        await presenter?.hideImmediatelyForAutoPaste()
     }
 
     // MARK: - Context helpers

@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 #
-# Builds NotchTubeAudio.app (a proper LSUIElement bundle) from the Swift package.
+# Builds Notchtambule.app (a proper LSUIElement bundle) from the Swift package.
 #
 # Usage: ./Scripts/build-app.sh [debug|release]
 #
@@ -30,19 +30,28 @@ fi
 echo "==> Compilando ($CONFIGURATION)…"
 swift build -c "$CONFIGURATION" --product NotchTubeAudio
 
+# User-visible app name (bundle, executable and CFBundleName). The SwiftPM
+# product/target stays `NotchTubeAudio`.
+APP_NAME="Notchtambule"
+
 BIN_DIR="$(swift build -c "$CONFIGURATION" --show-bin-path)"
-APP_DIR="$ROOT_DIR/build/NotchTubeAudio.app"
+APP_DIR="$ROOT_DIR/build/$APP_NAME.app"
 
 echo "==> Creando el bundle…"
 rm -rf "$APP_DIR"
+# Remove the previous bundle name so macOS doesn't list two copies of the app.
+rm -rf "$ROOT_DIR/build/NotchTubeAudio.app"
 mkdir -p "$APP_DIR/Contents/MacOS" "$APP_DIR/Contents/Resources"
 
-cp "$BIN_DIR/NotchTubeAudio" "$APP_DIR/Contents/MacOS/NotchTubeAudio"
-chmod +x "$APP_DIR/Contents/MacOS/NotchTubeAudio"
+cp "$BIN_DIR/NotchTubeAudio" "$APP_DIR/Contents/MacOS/$APP_NAME"
+chmod +x "$APP_DIR/Contents/MacOS/$APP_NAME"
 if [[ -d "$BIN_DIR/NotchTubeAudio_NotchTubeAudio.bundle" ]]; then
     cp -R "$BIN_DIR/NotchTubeAudio_NotchTubeAudio.bundle" "$APP_DIR/Contents/Resources/"
 fi
 cp "$ROOT_DIR/Info.plist" "$APP_DIR/Contents/Info.plist"
+
+# Keep CFBundleExecutable in sync with the copied binary name.
+/usr/libexec/PlistBuddy -c "Set :CFBundleExecutable $APP_NAME" "$APP_DIR/Contents/Info.plist" >/dev/null
 
 # Unique build number so macOS sees each bundle as a new build.
 /usr/libexec/PlistBuddy -c "Set :CFBundleVersion $(date +%Y%m%d%H%M)" "$APP_DIR/Contents/Info.plist" >/dev/null

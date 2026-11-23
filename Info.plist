@@ -10,15 +10,15 @@
 		<string>en</string>
 	</array>
 	<key>CFBundleExecutable</key>
-	<string>NotchTubeAudio</string>
+	<string>Notchtambule</string>
 	<key>CFBundleIdentifier</key>
 	<string>com.notchtube.audio</string>
 	<key>CFBundleInfoDictionaryVersion</key>
 	<string>6.0</string>
 	<key>CFBundleName</key>
-	<string>NotchTubeAudio</string>
+	<string>Notchtambule</string>
 	<key>CFBundleDisplayName</key>
-	<string>NotchTubeAudio</string>
+	<string>Notchtambule</string>
 	<key>CFBundlePackageType</key>
 	<string>APPL</string>
 	<key>CFBundleShortVersionString</key>
@@ -32,11 +32,11 @@
 	<key>LSUIElement</key>
 	<true/>
 	<key>NSDesktopFolderUsageDescription</key>
-	<string>NotchTubeAudio puede guardar los audios en una carpeta del escritorio si la eliges en Ajustes.</string>
+	<string>Notchtambule puede guardar los audios en una carpeta del escritorio si la eliges en Ajustes.</string>
 	<key>NSDocumentsFolderUsageDescription</key>
-	<string>NotchTubeAudio puede guardar los audios en una carpeta de documentos si la eliges en Ajustes.</string>
+	<string>Notchtambule puede guardar los audios en una carpeta de documentos si la eliges en Ajustes.</string>
 	<key>NSDownloadsFolderUsageDescription</key>
-	<string>NotchTubeAudio guarda los audios MP3 y WAV en tu carpeta de descargas.</string>
+	<string>Notchtambule guarda los audios MP3 y WAV en tu carpeta de descargas.</string>
 	<key>NSHighResolutionCapable</key>
 	<true/>
 	<key>NSPrincipalClass</key>
@@ -44,6 +44,6 @@
 	<key>NSSupportsAutomaticGraphicsSwitching</key>
 	<true/>
 	<key>NSHumanReadableCopyright</key>
-	<string>Copyright © 2026 NotchTubeAudio.</string>
+	<string>Copyright © 2026 Notchtambule.</string>
 </dict>
 </plist>

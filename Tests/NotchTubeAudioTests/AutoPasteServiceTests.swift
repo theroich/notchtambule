@@ -96,6 +96,8 @@ private final class AutoPasteMockPresenter: NotchPresenting {
     private(set) var presentPromptCount = 0
     private(set) var presentPanelCalls: [TimeInterval?] = []
     private(set) var hideCount = 0
+    private(set) var hideImmediatelyForAutoPasteCount = 0
+    var onHideImmediatelyForAutoPaste: (() -> Void)?
 
     func presentPrompt() {
         presentPromptCount += 1
@@ -107,6 +109,12 @@ private final class AutoPasteMockPresenter: NotchPresenting {
 
     func hide() {
         hideCount += 1
+    }
+
+    func hideImmediatelyForAutoPaste() async {
+        hideImmediatelyForAutoPasteCount += 1
+        hideCount += 1
+        onHideImmediatelyForAutoPaste?()
     }
 }
 
@@ -444,5 +452,59 @@ struct AutoPasteServiceTests {
         hosting.frame = NSRect(x: 0, y: 0, width: 600, height: 500)
         hosting.layoutSubtreeIfNeeded()
         #expect(hosting.fittingSize.width == 600)
+    }
+
+    @Test func autoPasteHidesNotchImmediatelyAndReactivatesAlreadyActiveTargetApp() async throws {
+        let harness = try makeHarness(trusted: true, autoPasteOnSelect: true)
+        defer { harness.cleanup() }
+
+        var events: [String] = []
+        // Simulate a non-activating panel scenario where the underlying app still reports isActive == true
+        let activeTargetApp = MockTargetApp(
+            bundleIdentifier: "com.apple.Notes",
+            localizedName: "Notes",
+            processIdentifier: 5150,
+            isActive: true
+        )
+        activeTargetApp.onActivate = {
+            events.append("activate")
+        }
+        harness.presenter.onHideImmediatelyForAutoPaste = {
+            events.append("hideImmediate")
+        }
+        harness.environment.frontmostApp = activeTargetApp
+
+        let item = ClipboardItem(changeCount: 1, payload: .text("Texto desde panel no activador"))
+        harness.historyStore.record(item)
+        harness.appState.showPanelFromHover()
+
+        let result = await harness.appState.autoPaste(item: item)
+        #expect(result == .pasted)
+        #expect(harness.presenter.hideImmediatelyForAutoPasteCount == 1)
+        #expect(activeTargetApp.activateCallCount >= 1)
+        #expect(events.first == "hideImmediate")
+        #expect(events.contains("activate"))
+        #expect(harness.environment.postCommandVCallCount == 1)
+    }
+
+    @Test func recordActivatedApplicationTracksExternalAppsAndIgnoresSelf() throws {
+        let harness = try makeHarness()
+        defer { harness.cleanup() }
+
+        let notes = MockTargetApp(
+            bundleIdentifier: "com.apple.Notes",
+            localizedName: "Notes",
+            processIdentifier: 6001
+        )
+        harness.autoPasteService.recordActivatedApplication(notes)
+        #expect(harness.autoPasteService.rememberedApp?.bundleIdentifier == "com.apple.Notes")
+
+        let ownApp = MockTargetApp(
+            bundleIdentifier: "com.notchtube.audio",
+            localizedName: "NotchTubeAudio",
+            processIdentifier: 9999
+        )
+        harness.autoPasteService.recordActivatedApplication(ownApp)
+        #expect(harness.autoPasteService.rememberedApp?.bundleIdentifier == "com.apple.Notes")
     }
 }
