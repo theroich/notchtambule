@@ -23,6 +23,7 @@ final class AppEnvironment {
     let autoPasteService: AutoPasteService
     let appState: AppState
     let clipboardMonitor: ClipboardMonitor
+    let globalHotKeyService: GlobalHotKeyService
     let notchController: NotchController
 
     private var isStarted = false
@@ -59,6 +60,7 @@ final class AppEnvironment {
             autoPasteService: autoPasteService
         )
         let notch = NotchController(appState: appState, settings: settings)
+        let globalHotKeyService = GlobalHotKeyService()
 
         self.settings = settings
         self.downloadManager = downloads
@@ -71,11 +73,15 @@ final class AppEnvironment {
         self.autoPasteService = autoPasteService
         self.appState = appState
         self.clipboardMonitor = clipboard
+        self.globalHotKeyService = globalHotKeyService
         self.notchController = notch
 
         appState.presenter = notch
         clipboard.onCapture = { [weak appState] item in
             appState?.handleCapturedItem(item)
+        }
+        globalHotKeyService.onHotKey = { [weak appState] in
+            appState?.openClipboardFromHotKey()
         }
     }
 
@@ -85,6 +91,13 @@ final class AppEnvironment {
 
         NSApp.setActivationPolicy(.accessory)
         autoPasteService.startObservingFrontmostApplications()
+        do {
+            try globalHotKeyService.start()
+        } catch {
+            Log.app.warning(
+                "Global hotkey \(self.globalHotKeyService.hotKey.displayString, privacy: .public) unavailable: \(String(describing: error), privacy: .public)"
+            )
+        }
         featureRegistry.startAllEnabled()
         notchController.start()
         clipboardMonitor.start()
@@ -100,6 +113,7 @@ final class AppEnvironment {
         isStarted = false
 
         clipboardMonitor.stop()
+        globalHotKeyService.stop()
         notchController.stop()
         autoPasteService.stopObservingFrontmostApplications()
         appState.shutdown()

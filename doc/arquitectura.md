@@ -168,6 +168,13 @@ Reglas:
 - **Multipantalla:** los prompts prefieren la pantalla con notch; los paneles usan la pantalla del cursor o la primaria. Si cambia la pantalla, se recrea la ventana.
 - **Pegado inmediato:** `hideImmediatelyForAutoPaste()` hace `resignKey()` y `orderOut(nil)` antes del `⌘V` para no esperar la animación de cierre.
 
+### Atajo global y navegación por teclado (`⌃⌘V`)
+
+- **`GlobalHotKeyService`:** registra `⌃⌘V` (`HotKey.clipboardDefault`) mediante Carbon (`RegisterEventHotKey` + `InstallEventHandler` en `CarbonHotKeyRegistrar`) durante `AppEnvironment.start()` y lo desregistra en `shutdown()`. Usar Carbon permite consumir el evento globalmente sin requerir permiso de Accesibilidad solo para abrir el notch. Si otra aplicación ocupa el atajo (`eventHotKeyExistsErr`), registra un warning y deja el resto de la app operativa (la personalización del atajo queda fuera del alcance actual).
+- **Estado de selección en `AppState`:** `openClipboardFromHotKey()` recuerda la app frontmost antes de activar el panel, cancela cualquier prompt activo, cambia a `.showingPanel(tab: .clipboardHistory)`, selecciona el primer elemento de `historyStore.filteredItems` (`selectedClipboardItemID`), activa `isKeyboardNavigationActive` y solicita el foco del panel (`focusNotchForKeyboardInput()`). `moveClipboardSelection(_:)` avanza o retrocede sin hacer wrap en los extremos; `reconcileClipboardSelection()` reajusta la selección si cambian la búsqueda, los filtros o la retención; `confirmClipboardSelection(forceCopyOnly:)` reutiliza `autoPaste(item:forceCopyOnly:)` evitando ejecuciones concurrentes.
+- **Foco y monitor local de teclas en `NotchController`:** `focusNotchForKeyboardInput()` instala un `NSEvent.addLocalMonitorForEvents(matching: .keyDown)` solo mientras el panel está abierto en modo teclado y hace key el `NSPanel` (`NSApp.activate(ignoringOtherApps: true)` + `window.makeKeyAndOrderFront(nil)`). `NotchController.keyboardCommand(for:)` traduce `↑`/`↓`, `Return`/`Enter` (ignorando `isARepeat`, con `⌥ + Enter` para solo copiar) y `Esc`, dejando pasar el resto de teclas al buscador `TextField`. El monitor se desinstala al ocultar, cerrar o cambiar a un prompt.
+- **Claves de localización:** `clipboard.keyboard.hint` (pista visual `↑↓ navegar · ↵ pegar · esc cerrar`), y `settings.clipboard.hotkey.{title,active,conflict,inactive}` para el estado del atajo en Ajustes.
+
 ## Pegado automático
 
 `AppState.autoPaste(item:forceCopyOnly:)` sigue este orden:

@@ -110,12 +110,12 @@ Todo ocurre en tu Mac: sin cuentas, sin nube y sin telemetría. El historial y l
 ## Uso rápido
 
 1. **Copia algo** con `⌘C` en cualquier aplicación.
-2. **Acerca el cursor al notch** para abrir el panel.
-3. **Haz clic en un elemento** para pegarlo en la app que tenías activa, o mantén `⌥` al hacer clic para copiarlo sin pegar.
+2. **Pulsa `⌃⌘V`** (`Control + Command + V`) desde cualquier app —o **acerca el cursor al notch**— para abrir el panel del portapapeles.
+3. **Navega con `↑` / `↓`** y pulsa **`Enter`** (o **haz clic en un elemento**) para pegarlo en la app que tenías activa; mantén `⌥` (`⌥ + Enter` o `⌥ + clic`) para copiarlo sin pegar, o pulsa **`Esc`** para cerrar sin pegar.
 4. Usa los **botones de acción** de cada fila para ejecutar las acciones del módulo que reconoce ese contenido.
 5. Abre **Ajustes** con `⌘,` para cambiar el límite del historial, la privacidad, el idioma, el modo de disparo de cada módulo y la carpeta de descargas.
 
-También puedes abrir el panel desde el **icono de la barra de menús** si el hover no está disponible.
+También puedes abrir el panel desde el **icono de la barra de menús** si el hover no está disponible. (El atajo global `⌃⌘V` es fijo por ahora; su personalización queda fuera de esta versión.)
 
 ## Construir desde el código
 

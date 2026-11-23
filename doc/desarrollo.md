@@ -98,6 +98,12 @@ Si el panel no reacciona al hover:
 2. Usa el icono de la barra de menús para abrir el panel manualmente.
 3. Revisa los logs de la categoría `notch`; verás si el monitor de proximidad arrancó.
 
+### Atajo global (`⌃⌘V`) y permisos
+
+- **Abrir el notch con `⌃⌘V`:** no requiere permiso de Accesibilidad (usa Carbon `RegisterEventHotKey`). Si no responde, comprueba en **Ajustes → Portapapeles y General** si aparece como *Atajo no disponible* por conflicto con otra aplicación.
+- **Navegar y pegar con teclado (`↑`/`↓`, `Enter`, `Esc`):** `Enter` reutiliza el flujo de `AutoPasteService`. Sin permiso de **Accesibilidad** —o cuando `SecureEventInput` está activo en un campo de contraseña— degrada de forma segura a **solo copiar** y muestra el aviso correspondiente en el notch.
+- La personalización del atajo queda fuera del alcance de esta versión (el modelo `HotKey` está preparado para una fase posterior).
+
 `NotchController` combina monitores global/local con un timer de 250 ms; si el panel se abre y se cierra solo, revisa la geometría de la pantalla y los márgenes de retención.
 
 ## Localización

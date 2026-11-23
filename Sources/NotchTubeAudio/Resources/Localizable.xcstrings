@@ -2721,6 +2721,91 @@
         }
       }
     },
+    "clipboard.keyboard.hint" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "↑↓ navigate · ↵ paste · esc close"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "↑↓ navegar · ↵ pegar · esc cerrar"
+          }
+        }
+      }
+    },
+    "settings.clipboard.hotkey.active" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Shortcut active"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Atajo activo"
+          }
+        }
+      }
+    },
+    "settings.clipboard.hotkey.conflict" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Shortcut unavailable: another app is using it"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Atajo no disponible: otra app lo está usando"
+          }
+        }
+      }
+    },
+    "settings.clipboard.hotkey.inactive" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Shortcut inactive"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Atajo inactivo"
+          }
+        }
+      }
+    },
+    "settings.clipboard.hotkey.title" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Open clipboard"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Abrir portapapeles"
+          }
+        }
+      }
+    },
     "youtube.thumbnail.accessibility" : {
       "extractionState" : "manual",
       "localizations" : {

@@ -4,8 +4,18 @@
 //
 
 import AppKit
+import Carbon.HIToolbox
 import SwiftUI
 @preconcurrency import DynamicNotchKit
+
+/// Keyboard actions supported while the clipboard history panel has keyboard focus.
+enum NotchKeyboardCommand: Equatable, Sendable {
+    case moveUp
+    case moveDown
+    case confirm
+    case copyOnly
+    case dismiss
+}
 
 /// Owns the DynamicNotch window and translates global mouse proximity into
 /// notch presentations.
@@ -33,6 +43,7 @@ final class NotchController: NotchPresenting {
 
     private var globalMouseMonitor: Any?
     private var localMouseMonitor: Any?
+    private var localKeyMonitor: Any?
     private var screenObserver: NSObjectProtocol?
     private var proximityTimer: Timer?
 
@@ -109,6 +120,7 @@ final class NotchController: NotchPresenting {
             NSEvent.removeMonitor(localMouseMonitor)
             self.localMouseMonitor = nil
         }
+        removeLocalKeyMonitor()
         if let screenObserver {
             NotificationCenter.default.removeObserver(screenObserver)
             self.screenObserver = nil
@@ -133,6 +145,7 @@ final class NotchController: NotchPresenting {
 
     func presentPrompt() {
         cancelTimers()
+        removeLocalKeyMonitor()
         pendingPresentationScreen = nil
 
         guard let screen = promptScreen() else { return }
@@ -159,6 +172,7 @@ final class NotchController: NotchPresenting {
 
     func hide() {
         cancelTimers()
+        removeLocalKeyMonitor()
         pendingPresentationScreen = nil
         wasInsideRetention = false
 
@@ -178,6 +192,7 @@ final class NotchController: NotchPresenting {
 
     func hideImmediatelyForAutoPaste() async {
         cancelTimers()
+        removeLocalKeyMonitor()
         pendingPresentationScreen = nil
         wasInsideRetention = false
         suppressHoverUntilExit = isPointerInsideTriggerZone()
@@ -201,6 +216,97 @@ final class NotchController: NotchPresenting {
 
         // Give AppKit / WindowServer a brief turn to complete focus transfer after ordering out.
         try? await Task.sleep(for: .milliseconds(30))
+    }
+
+    func focusNotchForKeyboardInput() {
+        cancelTimers()
+        installLocalKeyMonitorIfNeeded()
+
+        enqueueTransition { controller in
+            NSApp.activate(ignoringOtherApps: true)
+            if let window = controller.notch.windowController?.window {
+                window.makeKeyAndOrderFront(nil)
+            }
+        }
+    }
+
+    // MARK: - Keyboard Monitor
+
+    private func installLocalKeyMonitorIfNeeded() {
+        guard localKeyMonitor == nil else { return }
+
+        localKeyMonitor = NSEvent.addLocalMonitorForEvents(matching: [.keyDown]) { [weak self] event in
+            guard let self else { return event }
+            return self.handleLocalKeyDown(event)
+        }
+    }
+
+    private func removeLocalKeyMonitor() {
+        if let localKeyMonitor {
+            NSEvent.removeMonitor(localKeyMonitor)
+            self.localKeyMonitor = nil
+        }
+    }
+
+    private func handleLocalKeyDown(_ event: NSEvent) -> NSEvent? {
+        guard appState.notchMode == .showingPanel(tab: .clipboardHistory) else {
+            return event
+        }
+        guard let command = Self.keyboardCommand(for: event) else {
+            return event
+        }
+
+        switch command {
+        case .moveUp:
+            appState.moveClipboardSelection(.up)
+        case .moveDown:
+            appState.moveClipboardSelection(.down)
+        case .confirm:
+            Task { @MainActor [weak appState] in
+                await appState?.confirmClipboardSelection(forceCopyOnly: false)
+            }
+        case .copyOnly:
+            Task { @MainActor [weak appState] in
+                await appState?.confirmClipboardSelection(forceCopyOnly: true)
+            }
+        case .dismiss:
+            appState.hideNotch()
+        }
+        return nil
+    }
+
+    static func keyboardCommand(for event: NSEvent) -> NotchKeyboardCommand? {
+        keyboardCommand(
+            keyCode: event.keyCode,
+            modifierFlags: event.modifierFlags,
+            isARepeat: event.isARepeat
+        )
+    }
+
+    static func keyboardCommand(
+        keyCode: UInt16,
+        modifierFlags: NSEvent.ModifierFlags,
+        isARepeat: Bool
+    ) -> NotchKeyboardCommand? {
+        let relevantModifiers = modifierFlags.intersection([.command, .control, .option, .shift])
+
+        switch Int(keyCode) {
+        case kVK_UpArrow:
+            return relevantModifiers.isEmpty ? .moveUp : nil
+        case kVK_DownArrow:
+            return relevantModifiers.isEmpty ? .moveDown : nil
+        case kVK_Return, kVK_ANSI_KeypadEnter:
+            guard !isARepeat else { return nil }
+            if relevantModifiers == .option {
+                return .copyOnly
+            }
+            return relevantModifiers.isEmpty ? .confirm : nil
+        case kVK_Escape:
+            guard !isARepeat else { return nil }
+            return relevantModifiers.isEmpty ? .dismiss : nil
+        default:
+            return nil
+        }
     }
 
     // MARK: - Menu bar
@@ -329,7 +435,7 @@ final class NotchController: NotchPresenting {
             if insideRetention {
                 autoHideTimer?.cancel()
                 autoHideTimer = nil
-            } else if wasInsideRetention, !insideTrigger {
+            } else if wasInsideRetention, !insideTrigger, !appState.isKeyboardNavigationActive {
                 scheduleCollapse()
             }
         }

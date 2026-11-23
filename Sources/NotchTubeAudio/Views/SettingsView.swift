@@ -29,6 +29,7 @@ struct SettingsView: View {
     let featureRegistry: FeatureRegistry
     let historyStore: ClipboardHistoryStore?
     let autoPasteService: AutoPasteService
+    let globalHotKeyService: GlobalHotKeyService?
 
     @State private var selectedTab: SettingsTab = .clipboardAndGeneral
     @State private var isConfirmingClearHistory = false
@@ -38,12 +39,14 @@ struct SettingsView: View {
         settings: SettingsManager,
         featureRegistry: FeatureRegistry,
         historyStore: ClipboardHistoryStore? = nil,
-        autoPasteService: AutoPasteService = AutoPasteService()
+        autoPasteService: AutoPasteService = AutoPasteService(),
+        globalHotKeyService: GlobalHotKeyService? = nil
     ) {
         self.settings = settings
         self.featureRegistry = featureRegistry
         self.historyStore = historyStore
         self.autoPasteService = autoPasteService
+        self.globalHotKeyService = globalHotKeyService
         self._isAccessibilityTrusted = State(initialValue: autoPasteService.canAutoPaste())
     }
 
@@ -52,7 +55,8 @@ struct SettingsView: View {
             settings: environment.settings,
             featureRegistry: environment.featureRegistry,
             historyStore: environment.historyStore,
-            autoPasteService: environment.autoPasteService
+            autoPasteService: environment.autoPasteService,
+            globalHotKeyService: environment.globalHotKeyService
         )
     }
 
@@ -100,6 +104,24 @@ struct SettingsView: View {
 
     private func refreshAccessibilityStatus() {
         isAccessibilityTrusted = autoPasteService.canAutoPaste()
+    }
+
+    @ViewBuilder
+    private func hotKeyStatusLabel(for status: GlobalHotKeyStatus) -> some View {
+        switch status {
+        case .active:
+            Label(L10n.string("settings.clipboard.hotkey.active"), systemImage: "checkmark.circle.fill")
+                .font(.caption.weight(.medium))
+                .foregroundStyle(.green)
+        case .conflict:
+            Label(L10n.string("settings.clipboard.hotkey.conflict"), systemImage: "exclamationmark.triangle.fill")
+                .font(.caption.weight(.medium))
+                .foregroundStyle(.orange)
+        case .inactive, .failed:
+            Label(L10n.string("settings.clipboard.hotkey.inactive"), systemImage: "circle.slash")
+                .font(.caption.weight(.medium))
+                .foregroundStyle(.secondary)
+        }
     }
 
     // MARK: - Pestaña 1: Portapapeles y General
@@ -172,6 +194,23 @@ struct SettingsView: View {
                     Text(L10n.string("settings.autopaste.missing_permission.caption"))
                         .font(.caption)
                         .foregroundStyle(.secondary)
+                }
+
+                if let globalHotKeyService {
+                    LabeledContent(L10n.string("settings.clipboard.hotkey.title")) {
+                        HStack(spacing: 8) {
+                            Text(globalHotKeyService.hotKey.displayString)
+                                .font(.caption.monospaced().weight(.semibold))
+                                .padding(.horizontal, 6)
+                                .padding(.vertical, 2)
+                                .background(
+                                    RoundedRectangle(cornerRadius: 4, style: .continuous)
+                                        .fill(Color.secondary.opacity(0.15))
+                                )
+
+                            hotKeyStatusLabel(for: globalHotKeyService.status)
+                        }
+                    }
                 }
             }
 

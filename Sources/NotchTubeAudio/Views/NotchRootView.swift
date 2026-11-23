@@ -132,8 +132,14 @@ struct NotchRootView: View {
             actionContext: appState.actionContext,
             activeNotification: appState.activeNotification,
             isAutoPasteEnabled: appState.settings.autoPasteOnSelect && appState.autoPasteService.canAutoPaste(),
+            selectedItemID: appState.selectedClipboardItemID,
+            isKeyboardNavigationActive: appState.isKeyboardNavigationActive,
+            onReconcileSelection: {
+                appState.reconcileClipboardSelection()
+            },
             onSelectItem: { item, forceCopyOnly in
-                await appState.autoPaste(item: item, forceCopyOnly: forceCopyOnly)
+                appState.selectClipboardItem(item.id)
+                return await appState.autoPaste(item: item, forceCopyOnly: forceCopyOnly)
             }
         )
     }

@@ -19,6 +19,7 @@ struct ClipboardItemRowView: View {
     let isCopiedFeedbackActive: Bool
     var feedbackState: ClipboardItemClickFeedback = .copied
     var isAutoPasteEnabled: Bool = false
+    var isSelected: Bool = false
     let onCopy: () -> Void
     let onTogglePin: () -> Void
     let onRemove: () -> Void
@@ -78,20 +79,32 @@ struct ClipboardItemRowView: View {
         .overlay {
             RoundedRectangle(cornerRadius: 8, style: .continuous)
                 .strokeBorder(
-                    isCopiedFeedbackActive
-                        ? Color.green.opacity(0.45)
-                        : Color.white.opacity(isHovered ? 0.14 : 0.05),
-                    lineWidth: 1
+                    borderColor,
+                    lineWidth: isSelected && !isCopiedFeedbackActive ? 1.25 : 1
                 )
         }
+        .accessibilityAddTraits(isSelected ? .isSelected : [])
         .onHover { hovering in
             isHovered = hovering
         }
     }
 
+    private var borderColor: Color {
+        if isCopiedFeedbackActive {
+            return Color.green.opacity(0.45)
+        }
+        if isSelected {
+            return Color.white.opacity(0.45)
+        }
+        return Color.white.opacity(isHovered ? 0.14 : 0.05)
+    }
+
     private var backgroundOpacity: Double {
         if isCopiedFeedbackActive {
             return 0.11
+        }
+        if isSelected {
+            return 0.12
         }
         return isHovered ? 0.085 : 0.05
     }

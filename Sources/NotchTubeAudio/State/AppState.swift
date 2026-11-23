@@ -21,6 +21,8 @@ protocol NotchPresenting: AnyObject {
     /// Immediately dismisses the notch panel and relinquishes key-window focus
     /// before synthesizing `⌘V` into the previously active application.
     func hideImmediatelyForAutoPaste() async
+    /// Brings the notch panel forward and makes it key for keyboard navigation.
+    func focusNotchForKeyboardInput()
 }
 
 extension NotchPresenting {
@@ -32,6 +34,14 @@ extension NotchPresenting {
     func hideImmediatelyForAutoPaste() async {
         hide()
     }
+
+    func focusNotchForKeyboardInput() {}
+}
+
+/// Direction for keyboard navigation inside the clipboard history list.
+enum ClipboardSelectionDirection: Equatable, Sendable {
+    case up
+    case down
 }
 
 /// Global application orchestrator: coordinates the clipboard history store,
@@ -48,6 +58,15 @@ final class AppState {
     var activeTab: NotchPanelTab = .clipboardHistory
     private(set) var activeNotification: FeatureUserNotification?
     private(set) var lastPasteResult: PasteResult?
+    private(set) var selectedClipboardItemID: UUID?
+    private(set) var isKeyboardNavigationActive = false
+    @ObservationIgnored private var isConfirmingSelection = false
+
+    /// Currently selected item in the visible (filtered) clipboard history.
+    var selectedClipboardItem: ClipboardItem? {
+        guard let selectedClipboardItemID else { return nil }
+        return historyStore.filteredItems.first { $0.id == selectedClipboardItemID }
+    }
 
     @ObservationIgnored weak var presenter: (any NotchPresenting)?
 
@@ -105,9 +124,12 @@ final class AppState {
         let storedItem = historyStore.items.first(where: { $0.contentHash == annotatedItem.contentHash }) ?? annotatedItem
 
         if let promptPlugin = featureRegistry.primaryPromptPlugin(for: storedItem, context: actionContext) {
+            clearKeyboardSelection()
             autoPasteService.rememberFrontmostApp()
             notchMode = .promptingFeature(pluginID: promptPlugin.id, item: storedItem)
             presenter?.presentPrompt()
+        } else if notchMode == .showingPanel(tab: .clipboardHistory) {
+            reconcileClipboardSelection()
         }
     }
 
@@ -125,6 +147,7 @@ final class AppState {
               plugin.makePromptView(for: item, context: actionContext, onComplete: {}, onDismiss: {}) != nil else {
             return
         }
+        clearKeyboardSelection()
         autoPasteService.rememberFrontmostApp()
         notchMode = .promptingFeature(pluginID: pluginID, item: item)
         presenter?.presentPrompt()
@@ -172,6 +195,9 @@ final class AppState {
             autoPasteService.rememberFrontmostApp()
         }
         let resolvedTab = validatedTab(tab)
+        if resolvedTab != .clipboardHistory {
+            clearKeyboardSelection()
+        }
         activeTab = resolvedTab
         notchMode = .showingPanel(tab: resolvedTab)
         presenter?.presentPanel(autoHideAfter: seconds)
@@ -225,20 +251,105 @@ final class AppState {
 
     func hideFromHover() {
         guard notchMode.isShowingPanel else { return }
+        clearKeyboardSelection()
         notchMode = .idle
         presenter?.hide()
     }
 
     func hideFromTimeout() {
         guard notchMode.isShowingPanel else { return }
+        clearKeyboardSelection()
         notchMode = .idle
         presenter?.hide()
     }
 
     func hideNotch() {
         guard notchMode != .idle else { return }
+        clearKeyboardSelection()
         notchMode = .idle
         presenter?.hide()
+    }
+
+    // MARK: - Keyboard Navigation & Hotkey Flow
+
+    /// Opens the notch directly on the clipboard history tab in keyboard-navigation mode,
+    /// remembering the frontmost external application before activating the panel.
+    func openClipboardFromHotKey() {
+        autoPasteService.rememberFrontmostApp()
+        activeTab = .clipboardHistory
+        notchMode = .showingPanel(tab: .clipboardHistory)
+        isKeyboardNavigationActive = true
+        selectedClipboardItemID = historyStore.filteredItems.first?.id
+        presenter?.presentPanel(autoHideAfter: nil)
+        presenter?.focusNotchForKeyboardInput()
+    }
+
+    /// Moves keyboard selection up or down within `historyStore.filteredItems` without wrapping.
+    func moveClipboardSelection(_ direction: ClipboardSelectionDirection) {
+        let items = historyStore.filteredItems
+        guard !items.isEmpty else {
+            selectedClipboardItemID = nil
+            return
+        }
+
+        guard let currentID = selectedClipboardItemID,
+              let currentIndex = items.firstIndex(where: { $0.id == currentID }) else {
+            selectedClipboardItemID = items.first?.id
+            return
+        }
+
+        switch direction {
+        case .down:
+            if currentIndex + 1 < items.count {
+                selectedClipboardItemID = items[currentIndex + 1].id
+            }
+        case .up:
+            if currentIndex > 0 {
+                selectedClipboardItemID = items[currentIndex - 1].id
+            }
+        }
+    }
+
+    /// Updates the selected item ID explicitly (e.g. when a row is clicked).
+    func selectClipboardItem(_ id: UUID?) {
+        selectedClipboardItemID = id
+    }
+
+    /// Ensures `selectedClipboardItemID` still refers to a visible item in `historyStore.filteredItems`.
+    func reconcileClipboardSelection() {
+        let items = historyStore.filteredItems
+        guard !items.isEmpty else {
+            selectedClipboardItemID = nil
+            return
+        }
+        if let selectedClipboardItemID,
+           items.contains(where: { $0.id == selectedClipboardItemID }) {
+            return
+        }
+        if isKeyboardNavigationActive || selectedClipboardItemID != nil {
+            selectedClipboardItemID = items.first?.id
+        }
+    }
+
+    /// Confirms the currently selected clipboard item using the existing auto-paste pipeline.
+    @discardableResult
+    func confirmClipboardSelection(forceCopyOnly: Bool = false) async -> PasteResult? {
+        guard !isConfirmingSelection else { return nil }
+        guard let item = selectedClipboardItem else { return nil }
+
+        isConfirmingSelection = true
+        defer { isConfirmingSelection = false }
+
+        let result = await autoPaste(item: item, forceCopyOnly: forceCopyOnly)
+        if !forceCopyOnly {
+            clearKeyboardSelection()
+        }
+        return result
+    }
+
+    private func clearKeyboardSelection() {
+        selectedClipboardItemID = nil
+        isKeyboardNavigationActive = false
     }
 
     // MARK: - Auto-Paste
@@ -299,6 +410,7 @@ final class AppState {
 
     private func hideNotchForAutoPaste() async {
         guard notchMode != .idle else { return }
+        clearKeyboardSelection()
         notchMode = .idle
         await presenter?.hideImmediatelyForAutoPaste()
     }
@@ -339,6 +451,7 @@ final class AppState {
     func shutdown() {
         featureRegistry.shutdownAll()
         historyStore.flushPendingPersistence()
+        clearKeyboardSelection()
         activeNotification = nil
         notchMode = .idle
         presenter?.hide()

@@ -15,6 +15,9 @@ struct ClipboardHistoryView: View {
     let actionContext: FeatureActionContext
     var activeNotification: FeatureUserNotification?
     var isAutoPasteEnabled: Bool = false
+    var selectedItemID: UUID? = nil
+    var isKeyboardNavigationActive: Bool = false
+    var onReconcileSelection: (() -> Void)? = nil
     var onSelectItem: (@MainActor (ClipboardItem, Bool) async -> PasteResult)? = nil
 
     @State private var feedbackItemID: UUID?
@@ -41,35 +44,59 @@ struct ClipboardHistoryView: View {
             if filteredItems.isEmpty {
                 emptyStateView
             } else {
-                ScrollView(.vertical, showsIndicators: false) {
-                    LazyVStack(spacing: 4) {
-                        ForEach(filteredItems) { item in
-                            ClipboardItemRowView(
-                                item: item,
-                                quickActions: featureRegistry.quickActions(
-                                    for: item,
-                                    context: actionContext
-                                ),
-                                matchedPlugins: featureRegistry.matchingPlugins(for: item),
-                                isCopiedFeedbackActive: feedbackItemID == item.id,
-                                feedbackState: feedbackItemID == item.id ? feedbackState : .copied,
-                                isAutoPasteEnabled: isAutoPasteEnabled,
-                                onCopy: {
-                                    handleCopy(item)
-                                },
-                                onTogglePin: {
-                                    store.togglePin(item.id)
-                                },
-                                onRemove: {
-                                    store.remove(item.id)
-                                }
-                            )
+                ScrollViewReader { proxy in
+                    ScrollView(.vertical, showsIndicators: false) {
+                        LazyVStack(spacing: 4) {
+                            ForEach(filteredItems) { item in
+                                ClipboardItemRowView(
+                                    item: item,
+                                    quickActions: featureRegistry.quickActions(
+                                        for: item,
+                                        context: actionContext
+                                    ),
+                                    matchedPlugins: featureRegistry.matchingPlugins(for: item),
+                                    isCopiedFeedbackActive: feedbackItemID == item.id,
+                                    feedbackState: feedbackItemID == item.id ? feedbackState : .copied,
+                                    isAutoPasteEnabled: isAutoPasteEnabled,
+                                    isSelected: selectedItemID == item.id,
+                                    onCopy: {
+                                        handleCopy(item)
+                                    },
+                                    onTogglePin: {
+                                        store.togglePin(item.id)
+                                    },
+                                    onRemove: {
+                                        store.remove(item.id)
+                                    }
+                                )
+                                .id(item.id)
+                            }
+                        }
+                        .padding(.trailing, 1)
+                    }
+                    .frame(height: listHeight(for: filteredItems.count))
+                    .onChange(of: selectedItemID) { _, newID in
+                        guard let newID else { return }
+                        withAnimation(.easeInOut(duration: 0.12)) {
+                            proxy.scrollTo(newID, anchor: .center)
                         }
                     }
-                    .padding(.trailing, 1)
                 }
-                .frame(height: listHeight(for: filteredItems.count))
             }
+
+            if isKeyboardNavigationActive && !filteredItems.isEmpty {
+                HStack(spacing: 4) {
+                    Spacer(minLength: 0)
+                    Text(L10n.string("clipboard.keyboard.hint"))
+                        .font(.system(size: 9.5, weight: .medium))
+                        .foregroundStyle(.white.opacity(0.45))
+                    Spacer(minLength: 0)
+                }
+                .padding(.top, 1)
+            }
+        }
+        .onChange(of: filteredItems.map(\.id)) { _, _ in
+            onReconcileSelection?()
         }
     }
 
