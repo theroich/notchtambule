@@ -62,6 +62,9 @@ Todo ocurre en tu Mac: sin cuentas, sin nube y sin telemetría. El historial y l
 | **Conversor de color** | Convierte colores `#RGB`, `#RRGGBB`, `#RRGGBBAA` y `rgb(r, g, b)` a HEX, RGB o `Color` de SwiftUI. |
 | **OCR de texto** | Extrae texto seleccionable y copiable de imágenes del portapapeles en local usando Apple Vision, sin enviar nada a la red. |
 | **Acciones de archivo** | Detecta archivos copiados desde Finder y permite revelarlos en Finder, copiar sus rutas POSIX (una por línea), abrirlos con su app por defecto (con aviso de confirmación opcional si son muchos) o abrir su carpeta en la app de terminal configurada en Ajustes. Los archivos borrados o movidos se omiten con un aviso sin interrumpir el resto. |
+| **Developer Toolkit** | Decodifica JWT (header y payload sin verificar firma), texto Base64 / Base64URL y URLs o textos con percent-encoding (`%XX`). |
+
+> **Nota sobre Developer Toolkit:** Todo el análisis se ejecuta en local. La decodificación de JWT es solo estructural (no verifica firmas criptográficas ni sustituye a una librería de validación); Base64 admite alfabeto estándar (`+`, `/`) y Base64URL (`-`, `_`) con padding opcional; y la decodificación de URL aplica percent-encoding estándar sin convertir `+` en espacio.
 
 <p align="center">
   <img src="doc/images/notchtambule-downloads.jpg" width="820" alt="Pestaña de Descargas del notch con la cola de audios de YouTube completados">

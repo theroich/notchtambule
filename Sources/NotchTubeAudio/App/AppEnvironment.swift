@@ -20,6 +20,7 @@ final class AppEnvironment {
     let colorConverterPlugin: ColorConverterFeaturePlugin
     let ocrPlugin: OCRFeaturePlugin
     let fileActionsPlugin: FileActionsFeaturePlugin
+    let developerToolkitPlugin: DeveloperToolkitFeaturePlugin
     let historyStore: ClipboardHistoryStore
     let featureRegistry: FeatureRegistry
     let autoPasteService: AutoPasteService
@@ -42,6 +43,7 @@ final class AppEnvironment {
         let colorConverterPlugin = ColorConverterFeaturePlugin()
         let ocrPlugin = OCRFeaturePlugin()
         let fileActionsPlugin = FileActionsFeaturePlugin()
+        let developerToolkitPlugin = DeveloperToolkitFeaturePlugin()
         let clipboard = ClipboardMonitor(settings: settings)
         let historyStore = ClipboardHistoryStore(
             settings: settings,
@@ -55,7 +57,8 @@ final class AppEnvironment {
                 jsonFormatterPlugin,
                 colorConverterPlugin,
                 ocrPlugin,
-                fileActionsPlugin
+                fileActionsPlugin,
+                developerToolkitPlugin
             ]
         )
         let autoPasteService = AutoPasteService()
@@ -76,6 +79,7 @@ final class AppEnvironment {
         self.colorConverterPlugin = colorConverterPlugin
         self.ocrPlugin = ocrPlugin
         self.fileActionsPlugin = fileActionsPlugin
+        self.developerToolkitPlugin = developerToolkitPlugin
         self.historyStore = historyStore
         self.featureRegistry = featureRegistry
         self.autoPasteService = autoPasteService

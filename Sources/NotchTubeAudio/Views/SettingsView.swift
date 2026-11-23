@@ -70,7 +70,8 @@ struct SettingsView: View {
                 JSONFormatterFeaturePlugin(),
                 ColorConverterFeaturePlugin(),
                 OCRFeaturePlugin(),
-                FileActionsFeaturePlugin()
+                FileActionsFeaturePlugin(),
+                DeveloperToolkitFeaturePlugin()
             ]
         )
         self.init(

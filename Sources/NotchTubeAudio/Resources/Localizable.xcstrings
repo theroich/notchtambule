@@ -273,6 +273,23 @@
         }
       }
     },
+    "clipboard.keyboard.hint" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "↑↓ navigate · ↵ paste · esc close"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "↑↓ navegar · ↵ pegar · esc cerrar"
+          }
+        }
+      }
+    },
     "clipboard.row.copied" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -1272,6 +1289,329 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Detecta códigos de color HEX (#RRGGBB, #RGB, #RRGGBBAA) y RGB y los convierte entre HEX, RGB y SwiftUI Color."
+          }
+        }
+      }
+    },
+    "plugin.developer_toolkit.action.decode_base64" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Decode Base64"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Decodificar Base64"
+          }
+        }
+      }
+    },
+    "plugin.developer_toolkit.action.decode_jwt" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Decode JWT"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Decodificar JWT"
+          }
+        }
+      }
+    },
+    "plugin.developer_toolkit.action.decode_url" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Decode URL"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Decodificar URL"
+          }
+        }
+      }
+    },
+    "plugin.developer_toolkit.jwt.close" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Close"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cerrar"
+          }
+        }
+      }
+    },
+    "plugin.developer_toolkit.jwt.copy_all" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Copy all"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Copiar todo"
+          }
+        }
+      }
+    },
+    "plugin.developer_toolkit.jwt.copy_header" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Copy header"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Copiar header"
+          }
+        }
+      }
+    },
+    "plugin.developer_toolkit.jwt.copy_payload" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Copy payload"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Copiar payload"
+          }
+        }
+      }
+    },
+    "plugin.developer_toolkit.jwt.expired" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Expired"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Expirado"
+          }
+        }
+      }
+    },
+    "plugin.developer_toolkit.jwt.header" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Header"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Header"
+          }
+        }
+      }
+    },
+    "plugin.developer_toolkit.jwt.malformed" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Malformed JWT"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "JWT mal formado"
+          }
+        }
+      }
+    },
+    "plugin.developer_toolkit.jwt.payload" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Payload"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Payload"
+          }
+        }
+      }
+    },
+    "plugin.developer_toolkit.jwt.sensitive_notice" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "This token may contain sensitive data. Nothing is sent over the network."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Este token puede contener datos sensibles. No se envía nada a la red."
+          }
+        }
+      }
+    },
+    "plugin.developer_toolkit.jwt.warning_unverified" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Signature is not verified"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "La firma no se verifica"
+          }
+        }
+      }
+    },
+    "plugin.developer_toolkit.name" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Developer Toolkit"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Developer Toolkit"
+          }
+        }
+      }
+    },
+    "plugin.developer_toolkit.notify.base64_copied" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Decoded Base64 copied to clipboard"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Base64 decodificado copiado"
+          }
+        }
+      }
+    },
+    "plugin.developer_toolkit.notify.invalid_base64" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Could not decode Base64 as UTF-8 text"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No se pudo decodificar Base64 como texto UTF-8"
+          }
+        }
+      }
+    },
+    "plugin.developer_toolkit.notify.invalid_url" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Could not decode percent-encoded text"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No se pudo decodificar el texto percent-encoded"
+          }
+        }
+      }
+    },
+    "plugin.developer_toolkit.notify.url_copied" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Decoded URL copied to clipboard"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "URL decodificada copiada"
+          }
+        }
+      }
+    },
+    "plugin.developer_toolkit.summary" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Decodes Base64/Base64URL, percent-encoded URLs, and JWT headers/payloads locally without verifying signatures."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Decodifica Base64/Base64URL, texto percent-encoded y JWT en local sin verificar firmas."
           }
         }
       }
@@ -2585,6 +2925,74 @@
         }
       }
     },
+    "settings.clipboard.hotkey.active" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Shortcut active"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Atajo activo"
+          }
+        }
+      }
+    },
+    "settings.clipboard.hotkey.conflict" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Shortcut unavailable: another app is using it"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Atajo no disponible: otra app lo está usando"
+          }
+        }
+      }
+    },
+    "settings.clipboard.hotkey.inactive" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Shortcut inactive"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Atajo inactivo"
+          }
+        }
+      }
+    },
+    "settings.clipboard.hotkey.title" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Open clipboard"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Abrir portapapeles"
+          }
+        }
+      }
+    },
     "settings.clipboard.monitoring.auto" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -3414,91 +3822,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Herramientas"
-          }
-        }
-      }
-    },
-    "clipboard.keyboard.hint" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "↑↓ navigate · ↵ paste · esc close"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "↑↓ navegar · ↵ pegar · esc cerrar"
-          }
-        }
-      }
-    },
-    "settings.clipboard.hotkey.active" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Shortcut active"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Atajo activo"
-          }
-        }
-      }
-    },
-    "settings.clipboard.hotkey.conflict" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Shortcut unavailable: another app is using it"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Atajo no disponible: otra app lo está usando"
-          }
-        }
-      }
-    },
-    "settings.clipboard.hotkey.inactive" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Shortcut inactive"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Atajo inactivo"
-          }
-        }
-      }
-    },
-    "settings.clipboard.hotkey.title" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Open clipboard"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Abrir portapapeles"
           }
         }
       }
