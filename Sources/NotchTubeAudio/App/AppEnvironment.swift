@@ -19,6 +19,7 @@ final class AppEnvironment {
     let jsonFormatterPlugin: JSONFormatterFeaturePlugin
     let colorConverterPlugin: ColorConverterFeaturePlugin
     let ocrPlugin: OCRFeaturePlugin
+    let fileActionsPlugin: FileActionsFeaturePlugin
     let historyStore: ClipboardHistoryStore
     let featureRegistry: FeatureRegistry
     let autoPasteService: AutoPasteService
@@ -40,6 +41,7 @@ final class AppEnvironment {
         let jsonFormatterPlugin = JSONFormatterFeaturePlugin()
         let colorConverterPlugin = ColorConverterFeaturePlugin()
         let ocrPlugin = OCRFeaturePlugin()
+        let fileActionsPlugin = FileActionsFeaturePlugin()
         let clipboard = ClipboardMonitor(settings: settings)
         let historyStore = ClipboardHistoryStore(
             settings: settings,
@@ -52,7 +54,8 @@ final class AppEnvironment {
                 urlCleanerPlugin,
                 jsonFormatterPlugin,
                 colorConverterPlugin,
-                ocrPlugin
+                ocrPlugin,
+                fileActionsPlugin
             ]
         )
         let autoPasteService = AutoPasteService()
@@ -72,6 +75,7 @@ final class AppEnvironment {
         self.jsonFormatterPlugin = jsonFormatterPlugin
         self.colorConverterPlugin = colorConverterPlugin
         self.ocrPlugin = ocrPlugin
+        self.fileActionsPlugin = fileActionsPlugin
         self.historyStore = historyStore
         self.featureRegistry = featureRegistry
         self.autoPasteService = autoPasteService

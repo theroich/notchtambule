@@ -69,7 +69,8 @@ struct SettingsView: View {
                 URLCleanerFeaturePlugin(),
                 JSONFormatterFeaturePlugin(),
                 ColorConverterFeaturePlugin(),
-                OCRFeaturePlugin()
+                OCRFeaturePlugin(),
+                FileActionsFeaturePlugin()
             ]
         )
         self.init(

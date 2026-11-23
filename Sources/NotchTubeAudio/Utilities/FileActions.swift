@@ -8,10 +8,42 @@ import AppKit
 /// Finder related actions shared by the notch UI and the menu bar.
 @MainActor
 enum FileActions {
+    /// Filters the provided URLs to existing local file URLs, preserving order.
+    static func existingURLs(from urls: [URL]) -> [URL] {
+        urls.filter { $0.isFileURL && FileManager.default.fileExists(atPath: $0.path) }
+    }
+
     /// Reveals a finished file in Finder.
     static func reveal(_ url: URL) {
-        guard FileManager.default.fileExists(atPath: url.path) else { return }
-        NSWorkspace.shared.activateFileViewerSelecting([url])
+        reveal([url])
+    }
+
+    /// Reveals one or more existing files in Finder.
+    static func reveal(_ urls: [URL]) {
+        let existing = existingURLs(from: urls)
+        guard !existing.isEmpty else { return }
+        NSWorkspace.shared.activateFileViewerSelecting(existing)
+    }
+
+    /// Opens existing file URLs with their default applications and returns any URLs that failed to open.
+    @discardableResult
+    static func open(_ urls: [URL]) -> [URL] {
+        var failed: [URL] = []
+        for url in urls where url.isFileURL {
+            guard FileManager.default.fileExists(atPath: url.path) else {
+                failed.append(url)
+                continue
+            }
+            if !NSWorkspace.shared.open(url) {
+                failed.append(url)
+            }
+        }
+        return failed
+    }
+
+    /// Formats file URLs as POSIX paths separated by newlines, preserving order and without a trailing newline.
+    static func formatPOSIXPaths(_ urls: [URL]) -> String {
+        urls.map(\.path).joined(separator: "\n")
     }
 
     /// Opens a folder, creating it when needed.
