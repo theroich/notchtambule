@@ -58,6 +58,26 @@ struct ProcessOutputParserTests {
         )
         #expect(
             ProcessOutputParser.outputFileURL(
+                from: "/Users/test/Downloads/Mi Video [1080p].mp4",
+                destination: destination
+            )?.path == "/Users/test/Downloads/Mi Video [1080p].mp4"
+        )
+        #expect(
+            ProcessOutputParser.outputFileURL(
+                from: #"[Merger] Merging formats into "/Users/test/Downloads/Mi Video [720p].mp4""#,
+                destination: destination,
+                expectedFormat: .mp4_720p
+            )?.path == "/Users/test/Downloads/Mi Video [720p].mp4"
+        )
+        #expect(
+            ProcessOutputParser.outputFileURL(
+                from: "/Users/test/Downloads/Mi Video [1080p].mp4",
+                destination: destination,
+                expectedFormat: .mp3
+            ) == nil
+        )
+        #expect(
+            ProcessOutputParser.outputFileURL(
                 from: "[download] Destination: /Users/test/Downloads/video.mp4",
                 destination: destination
             ) == nil
@@ -70,9 +90,40 @@ struct ProcessOutputParserTests {
         )
     }
 
+    @Test func detectsUnexpectedContainerExtension() {
+        let destination = URL(fileURLWithPath: "/Users/test/Downloads", isDirectory: true)
+
+        #expect(
+            ProcessOutputParser.unexpectedOutputFileURL(
+                from: "/Users/test/Downloads/Mi Video [1080p].mkv",
+                destination: destination,
+                expectedFormat: .mp4_1080p
+            )?.pathExtension == "mkv"
+        )
+        #expect(
+            ProcessOutputParser.unexpectedOutputFileURL(
+                from: #"[Merger] Merging formats into "/Users/test/Downloads/Mi Video [720p].webm""#,
+                destination: destination,
+                expectedFormat: .mp4_720p
+            )?.pathExtension == "webm"
+        )
+        #expect(
+            ProcessOutputParser.unexpectedOutputFileURL(
+                from: "/Users/test/Downloads/Mi Video [1080p].mp4",
+                destination: destination,
+                expectedFormat: .mp4_1080p
+            ) == nil
+        )
+    }
+
     @Test func detectsConversion() {
         #expect(ProcessOutputParser.indicatesConversion("[ExtractAudio] Destination: /a/b.mp3"))
         #expect(ProcessOutputParser.indicatesConversion("[ffmpeg] Post-process"))
+        #expect(ProcessOutputParser.indicatesConversion("[Merger] Merging formats into \"/a/b [1080p].mp4\""))
+        #expect(ProcessOutputParser.indicatesConversion("[VideoRemuxer] Remuxing video from webm to mp4"))
+        #expect(ProcessOutputParser.indicatesConversion("[VideoConvertor] Converting video"))
+        #expect(ProcessOutputParser.indicatesConversion("Merging formats into output.mp4"))
+        #expect(ProcessOutputParser.indicatesConversion("Fixing container of output.mp4"))
         #expect(!ProcessOutputParser.indicatesConversion("50.0%"))
     }
 

@@ -20,9 +20,9 @@
 
 **Notchtambule** es una aplicación nativa de macOS que vive en la barra de menús y utiliza el notch de la cámara —o la parte superior de la pantalla en Macs sin notch— como interfaz para consultar y reutilizar todo lo que copias.
 
-Cada vez que copias un texto, un enlace, una imagen o un archivo, Notchtambule lo guarda en un historial local con búsqueda, filtros, fijados y pegado directo. Además, analiza el contenido y ofrece **acciones contextuales**: descargar el audio de un vídeo de YouTube, limpiar los parámetros de seguimiento de una URL, formatear un JSON o convertir un color a otro formato.
+Cada vez que copias un texto, un enlace, una imagen o un archivo, Notchtambule lo guarda en un historial local con búsqueda, filtros, fijados y pegado directo. Además, analiza el contenido y ofrece **acciones contextuales**: descargar el audio o vídeo de un enlace de YouTube, limpiar los parámetros de seguimiento de una URL, formatear un JSON o convertir un color a otro formato.
 
-Todo ocurre en tu Mac: sin cuentas, sin nube y sin telemetría. El historial y las preferencias se guardan en local. La única excepción es el módulo **YouTube Audio**, que consulta la URL del vídeo en el endpoint público oEmbed de YouTube para obtener título, canal y miniatura.
+Todo ocurre en tu Mac: sin cuentas, sin nube y sin telemetría. El historial y las preferencias se guardan en local. La única excepción es el módulo **YouTube Audio y Vídeo**, que consulta la URL del vídeo en el endpoint público oEmbed de YouTube para obtener título, canal y miniatura.
 
 <p align="center">
   <img src="doc/images/notchtambule-clipboard.jpg" width="820" alt="Historial del portapapeles abierto en el notch, con búsqueda, filtros, elementos fijados y acciones rápidas">
@@ -56,7 +56,7 @@ Todo ocurre en tu Mac: sin cuentas, sin nube y sin telemetría. El historial y l
 
 | Módulo | Qué hace |
 |---|---|
-| **YouTube Audio** | Detecta enlaces de YouTube y descarga el audio en **MP3** o **WAV** con `yt-dlp` y `ffmpeg`. Muestra título, canal y miniatura, gestiona una cola de descargas y reintenta automáticamente los errores 403. |
+| **YouTube Audio y Vídeo** | Detecta enlaces de YouTube y descarga el **audio** (**MP3**, **WAV**) o el **vídeo** (**MP4 720p**, **MP4 1080p**) con `yt-dlp` y `ffmpeg`. Muestra título, canal y miniatura, gestiona una cola de descargas y reintenta automáticamente los errores 403. |
 | **Limpiador de URLs** | Elimina parámetros de seguimiento (`utm_*`, `fbclid`, `gclid`, `igshid`, `si`, etc.) conservando el resto de la URL. |
 | **Formateador JSON** | Formatea (`Prettify`) o compacta (`Minify`) documentos JSON válidos. |
 | **Conversor de color** | Convierte colores `#RGB`, `#RRGGBB`, `#RRGGBBAA` y `rgb(r, g, b)` a HEX, RGB o `Color` de SwiftUI. |
@@ -66,10 +66,21 @@ Todo ocurre en tu Mac: sin cuentas, sin nube y sin telemetría. El historial y l
 
 > **Nota sobre Developer Toolkit:** Todo el análisis se ejecuta en local. La decodificación de JWT es solo estructural (no verifica firmas criptográficas ni sustituye a una librería de validación); Base64 admite alfabeto estándar (`+`, `/`) y Base64URL (`-`, `_`) con padding opcional; y la decodificación de URL aplica percent-encoding estándar sin convertir `+` en espacio.
 
+#### Formatos de YouTube Audio y Vídeo
+
+| Formato | Tipo | Extensión | Notas |
+|---|---|---|---|
+| **MP3** | Audio | `.mp3` | Extracción de audio en máxima calidad (`%(title)s.mp3`). |
+| **WAV** | Audio | `.wav` | Audio sin compresión (`%(title)s.wav`). |
+| **MP4 720p** | Vídeo | `.mp4` | H.264/AAC hasta 720p para compatibilidad con QuickTime y Finder (`%(title)s [720p].mp4`). |
+| **MP4 1080p** | Vídeo | `.mp4` | H.264/AAC hasta 1080p (`%(title)s [1080p].mp4`). |
+
+> **Nota sobre descargas de vídeo:** Las descargas en MP4 requieren `ffmpeg` para combinar las pistas de vídeo y audio y pueden ocupar significativamente más espacio en disco que el audio. El identificador interno del módulo (`com.notchclip.plugin.youtube-audio`) se mantiene sin cambios para conservar tus preferencias.
+
 <p align="center">
-  <img src="doc/images/notchtambule-downloads.jpg" width="820" alt="Pestaña de Descargas del notch con la cola de audios de YouTube completados">
+  <img src="doc/images/notchtambule-downloads.jpg" width="820" alt="Pestaña de Descargas del notch con la cola de descargas de YouTube completadas">
   <br>
-  <em>Cola de descargas de YouTube Audio, con formato, estado y acceso al archivo final.</em>
+  <em>Cola de descargas de YouTube Audio y Vídeo, con formato, estado y acceso al archivo final.</em>
 </p>
 
 ### Más
@@ -94,7 +105,7 @@ Todo ocurre en tu Mac: sin cuentas, sin nube y sin telemetría. El historial y l
    xattr -dr com.apple.quarantine "/Applications/Notchtambule.app"
    ```
 
-4. Si quieres usar el módulo **YouTube Audio**, instala sus dependencias:
+4. Si quieres usar el módulo **YouTube Audio y Vídeo**, instala sus dependencias:
 
    ```bash
    brew install yt-dlp ffmpeg
@@ -109,7 +120,7 @@ Todo ocurre en tu Mac: sin cuentas, sin nube y sin telemetría. El historial y l
 | Componente | Versión / notas |
 |---|---|
 | macOS | 14 Sonoma o superior |
-| `yt-dlp` + `ffmpeg` | Opcionales. Solo necesarios para el módulo YouTube Audio. |
+| `yt-dlp` + `ffmpeg` | Opcionales. Necesarios para el módulo YouTube Audio y Vídeo (incluyendo el merge de vídeo MP4). |
 | Accesibilidad | Opcional. Necesaria para pegar automáticamente con `⌘V`. |
 
 ## Uso rápido

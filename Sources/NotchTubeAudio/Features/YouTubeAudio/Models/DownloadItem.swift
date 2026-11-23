@@ -6,7 +6,7 @@
 import Foundation
 import Observation
 
-/// One audio download. Observation driven so SwiftUI rows update themselves as
+/// One audio or video download. Observation driven so SwiftUI rows update themselves as
 /// yt-dlp reports progress.
 @MainActor
 @Observable
@@ -15,7 +15,7 @@ final class DownloadItem: Identifiable {
     let url: URL
     let canonicalURLString: String
     let videoID: String
-    let format: AudioFormat
+    let format: DownloadFormat
     let thumbnailURL: URL?
 
     var title: String
@@ -36,7 +36,7 @@ final class DownloadItem: Identifiable {
         title: String,
         authorName: String?,
         thumbnailURL: URL?,
-        format: AudioFormat
+        format: DownloadFormat
     ) {
         self.url = url
         self.canonicalURLString = canonicalURLString
@@ -50,7 +50,7 @@ final class DownloadItem: Identifiable {
         self.createdAt = Date()
     }
 
-    convenience init(video: DetectedVideo, format: AudioFormat) {
+    convenience init(video: DetectedVideo, format: DownloadFormat) {
         self.init(
             url: video.canonicalURL,
             canonicalURLString: video.canonicalURL.absoluteString,
@@ -71,6 +71,8 @@ final class DownloadItem: Identifiable {
             return L10n.format("downloads.status.downloading_percent", Int64((progress * 100).rounded()))
         case .converting:
             return L10n.string("downloads.status.converting")
+        case .merging:
+            return L10n.string("downloads.status.merging")
         case .completed:
             return L10n.string("downloads.status.completed")
         case .failed:

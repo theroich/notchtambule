@@ -60,11 +60,16 @@ enum ProcessOutputParser {
         return min(max(value, 0), 100)
     }
 
-    /// `true` when yt-dlp started the ffmpeg extraction phase.
+    /// `true` when yt-dlp started the ffmpeg audio extraction or video merge/remux phase.
     static func indicatesConversion(_ line: String) -> Bool {
         line.contains("[ExtractAudio]")
             || line.contains("[ffmpeg]")
             || line.contains("Extracting audio")
+            || line.contains("[Merger]")
+            || line.contains("[VideoRemuxer]")
+            || line.contains("[VideoConvertor]")
+            || line.contains("Merging formats")
+            || line.contains("Fixing container")
     }
 
     /// Extracts progress from any of yt-dlp's progress shapes.
@@ -87,14 +92,66 @@ enum ProcessOutputParser {
         return min(max(value, 0), 100)
     }
 
-    /// Resolves the final audio file from a yt-dlp line.
+    /// Resolves the final output file from a yt-dlp line.
     ///
     /// `--print after_move:filepath` emits a bare path, while `--no-quiet` emits
-    /// `[ExtractAudio] Destination: /path/file.mp3`.
-    static func outputFileURL(from line: String, destination: URL) -> URL? {
+    /// `[ExtractAudio] Destination: /path/file.mp3` or
+    /// `[Merger] Merging formats into "/path/file [1080p].mp4"`.
+    /// Intermediate `[download] Destination: ...` lines are ignored.
+    static func outputFileURL(
+        from line: String,
+        destination: URL,
+        expectedFormat: DownloadFormat? = nil
+    ) -> URL? {
+        guard let url = extractCandidateFileURL(from: line, destination: destination) else {
+            return nil
+        }
+
+        let pathExtension = url.pathExtension.lowercased()
+        if let expectedFormat {
+            guard pathExtension == expectedFormat.fileExtension else { return nil }
+        } else {
+            guard DownloadFormat.allowedFileExtensions.contains(pathExtension) else { return nil }
+        }
+
+        return url
+    }
+
+    /// Detects when `yt-dlp` reports a final file path whose container does not match
+    /// `expectedFormat.fileExtension` (e.g. `.mkv` or `.webm` when `.mp4` was expected).
+    static func unexpectedOutputFileURL(
+        from line: String,
+        destination: URL,
+        expectedFormat: DownloadFormat
+    ) -> URL? {
+        guard let url = extractCandidateFileURL(from: line, destination: destination) else {
+            return nil
+        }
+
+        let pathExtension = url.pathExtension.lowercased()
+        guard !pathExtension.isEmpty, pathExtension != expectedFormat.fileExtension else {
+            return nil
+        }
+
+        let knownMediaExtensions: Set<String> = [
+            "mkv", "webm", "mov", "avi", "flv", "m4v", "ts",
+            "m4a", "opus", "ogg", "flac", "aac", "mp3", "wav", "mp4"
+        ]
+        guard knownMediaExtensions.contains(pathExtension) else { return nil }
+        return url
+    }
+
+    private static func extractCandidateFileURL(from line: String, destination: URL) -> URL? {
+        // Ignore raw pre-merge/pre-extraction download destination lines.
+        if line.hasPrefix("[download]") {
+            return nil
+        }
+
         var candidate = line
 
-        if let destinationRange = line.range(of: "Destination: ") {
+        if let mergeRange = line.range(of: "Merging formats into ") {
+            candidate = String(line[mergeRange.upperBound...])
+        } else if let destinationRange = line.range(of: "Destination: ") {
             candidate = String(line[destinationRange.upperBound...])
         } else if line.hasPrefix("[") {
             return nil
@@ -105,19 +162,16 @@ enum ProcessOutputParser {
             candidate = String(candidate.dropFirst().dropLast())
         }
 
+        guard !candidate.isEmpty else { return nil }
         let pathExtension = (candidate as NSString).pathExtension.lowercased()
-        guard let format = AudioFormat(rawValue: pathExtension) else { return nil }
+        guard !pathExtension.isEmpty else { return nil }
 
         let expanded = (candidate as NSString).expandingTildeInPath
-        let url: URL
         if expanded.hasPrefix("/") {
-            url = URL(fileURLWithPath: expanded)
+            return URL(fileURLWithPath: expanded)
         } else {
-            url = destination.appendingPathComponent(expanded)
+            return destination.appendingPathComponent(expanded)
         }
-
-        guard url.pathExtension.lowercased() == format.fileExtension else { return nil }
-        return url
     }
 
     /// Picks the best human readable line for an error message.

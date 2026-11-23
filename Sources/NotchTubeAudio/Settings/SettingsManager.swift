@@ -63,7 +63,7 @@ final class SettingsManager {
         }
     }
 
-    var defaultFormat: AudioFormat {
+    var defaultFormat: DownloadFormat {
         didSet {
             defaults.set(defaultFormat.rawValue, forKey: Key.defaultFormat)
         }
@@ -184,7 +184,7 @@ final class SettingsManager {
         self.downloadDirectory = storedDirectory.map { URL(fileURLWithPath: $0, isDirectory: true) } ?? fallbackDownloads
 
         let storedFormat = defaults.string(forKey: Key.defaultFormat)
-        self.defaultFormat = storedFormat.flatMap(AudioFormat.init(rawValue:)) ?? .mp3
+        self.defaultFormat = DownloadFormat.fromStoredValue(storedFormat)
 
         let storedYTDLP = defaults.string(forKey: Key.ytDlpPath)
         self.ytDlpPath = storedYTDLP ?? BinaryLocator.locate("yt-dlp") ?? Self.defaultYTDLPPath

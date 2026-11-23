@@ -8,14 +8,26 @@ import SwiftUI
 /// "New YouTube URL" prompt shown inside the notch.
 struct NotchPromptView: View {
     let video: DetectedVideo
-    let format: AudioFormat
+    let format: DownloadFormat
     let binariesAvailable: Bool
-    let onSelectFormat: (AudioFormat) -> Void
+    let onSelectFormat: (DownloadFormat) -> Void
     let onSave: () -> Void
     let onCancel: () -> Void
 
+    var primaryActionTitle: String {
+        format.isVideo
+            ? L10n.string("youtube.prompt.save_video")
+            : L10n.string("youtube.prompt.save_audio")
+    }
+
+    var primaryActionHelp: String {
+        format.isVideo
+            ? L10n.string("youtube.prompt.save_video.help")
+            : L10n.string("youtube.prompt.save_audio.help")
+    }
+
     var body: some View {
-        VStack(alignment: .leading, spacing: 11) {
+        VStack(alignment: .leading, spacing: 10) {
             HStack(alignment: .top, spacing: 12) {
                 ThumbnailView(url: video.thumbnailURL, videoID: video.videoID)
                     .frame(width: 94, height: 70)
@@ -49,13 +61,23 @@ struct NotchPromptView: View {
 
             HStack(spacing: 8) {
                 FormatPills(selection: format, onSelect: onSelectFormat)
+                Spacer(minLength: 0)
+            }
 
+            HStack(spacing: 8) {
                 if !binariesAvailable {
                     Label(L10n.string("youtube.prompt.missing_binaries"), systemImage: "exclamationmark.triangle.fill")
                         .font(.system(size: 9.5, weight: .medium))
                         .foregroundStyle(.orange)
                         .lineLimit(1)
+                        .truncationMode(.tail)
                         .help(L10n.string("youtube.prompt.missing_binaries.help"))
+                } else if format.isVideo {
+                    Text(L10n.string("youtube.prompt.video.quality_help"))
+                        .font(.system(size: 9.5))
+                        .foregroundStyle(.white.opacity(0.45))
+                        .lineLimit(1)
+                        .truncationMode(.tail)
                 }
 
                 Spacer(minLength: 4)
@@ -76,7 +98,7 @@ struct NotchPromptView: View {
                     HStack(spacing: 5) {
                         Image(systemName: "arrow.down.circle.fill")
                             .font(.system(size: 11, weight: .semibold))
-                        Text(L10n.string("youtube.prompt.save_audio"))
+                        Text(primaryActionTitle)
                             .font(.system(size: 11, weight: .semibold))
                             .lineLimit(1)
                     }
@@ -87,9 +109,10 @@ struct NotchPromptView: View {
                     .contentShape(Capsule())
                 }
                 .buttonStyle(.plain)
-                .help(L10n.string("youtube.prompt.save_audio.help"))
-                .accessibilityLabel(L10n.string("youtube.prompt.save_audio"))
+                .help(primaryActionHelp)
+                .accessibilityLabel(primaryActionTitle)
             }
+            .frame(minHeight: 26)
         }
         .padding(.horizontal, 4)
         .padding(.bottom, 1)

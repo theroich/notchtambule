@@ -56,6 +56,9 @@ struct YouTubeURLParserTests {
 
     @MainActor
     @Test func pluginCanHandleMatchesURLAndTextPayloadsWithValidYouTubeLinks() throws {
+        let previousLanguage = forceSpanishLanguage()
+        defer { L10n.currentLanguage = previousLanguage }
+
         let suiteName = "notchtube.ytparser.plugin.\(UUID().uuidString)"
         let defaults = try #require(UserDefaults(suiteName: suiteName))
         defer { defaults.removePersistentDomain(forName: suiteName) }
@@ -64,7 +67,7 @@ struct YouTubeURLParserTests {
         let plugin = YouTubeAudioFeaturePlugin(settings: settings)
 
         #expect(plugin.id == "com.notchclip.plugin.youtube-audio")
-        #expect(plugin.displayName == "YouTube Audio")
+        #expect(plugin.displayName == "YouTube Audio y Vídeo")
         #expect(plugin.iconSystemName == "waveform.badge.mic")
         #expect(plugin.priority == .high)
         #expect(plugin.defaultTriggerBehavior == .automaticPrompt)

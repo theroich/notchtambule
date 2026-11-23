@@ -206,7 +206,7 @@ La app nunca falla en silencio: cualquier degradación a solo copiar produce un 
 |---|---|
 | `notchtube.appLanguage` | Idioma elegido (`system`, `es`, `en`). |
 | `notchtube.downloadDirectory` | Carpeta de descargas. |
-| `notchtube.defaultFormat` | `mp3` o `wav`. |
+| `notchtube.defaultFormat` | Formato por defecto (`mp3`, `wav`, `mp4_720p`, `mp4_1080p`). Los valores previos `mp3`/`wav` migran sin cambios y cualquier valor desconocido cae a `mp3`. |
 | `notchtube.ytDlpPath` / `notchtube.ffmpegPath` | Rutas de binarios. |
 | `notchtube.clipboardMonitoring` | Escucha automática. |
 | `notchtube.ignoreConfidentialTypes` | Filtro de privacidad. |
@@ -262,4 +262,4 @@ Los módulos nuevos no necesitan tocar `SettingsManager` para activarse o desact
 - **Módulos compilados:** no hay carga dinámica de bundles. Un módulo nuevo requiere recompilar la app y registrarlo en `AppEnvironment`.
 - **Un solo prompt automático:** si varios módulos de prioridad alta coinciden, gana el primero; el resto sigue disponible como acciones rápidas.
 - **Historial en memoria:** el índice se carga completo al arrancar. Está acotado por `maxClipboardHistoryItems` (máximo 500).
-- **YouTube Audio depende de binarios externos:** sin `yt-dlp` y `ffmpeg` el módulo detecta enlaces, pero no puede descargar.
+- **YouTube Audio y Vídeo (`com.notchclip.plugin.youtube-audio`) depende de binarios externos:** sin `yt-dlp` y `ffmpeg` el módulo detecta enlaces, pero no puede descargar ni combinar vídeo MP4. `DownloadFormat` unifica audio (`mp3`, `wav`) y vídeo (`mp4_720p`, `mp4_1080p`), y `YTDLPCommandBuilder` construye de forma pura los argumentos de extracción de audio o merge MP4 (con fallback `web_embedded` ante HTTP 403). El `pluginID` permanece inalterado para preservar el estado y modo de disparo guardados en `UserDefaults`.
