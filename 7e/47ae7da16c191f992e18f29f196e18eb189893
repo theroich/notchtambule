@@ -1,0 +1,22 @@
+Sources/NotchTubeAudio/App/AppEnvironment.swift
+  h_c714c5d6d16f81 87,104
+Sources/NotchTubeAudio/Services/AutoPasteService.swift
+  h_c714c5d6d16f81 127-130,191-193,203,227,231,272-306,350-354
+Sources/NotchTubeAudio/Services/NotchController.swift
+  h_c714c5d6d16f81 179-205
+Sources/NotchTubeAudio/State/AppState.swift
+  h_c714c5d6d16f81 21-23,31-34,281-285,290-293,300-305
+Tests/NotchTubeAudioTests/AutoPasteServiceTests.swift
+  h_c714c5d6d16f81 99-100,113-118,456-509
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.6",
+  "base_commit_sha": "7e47ae7da16c191f992e18f29f196e18eb189893",
+  "prompts": {},
+  "humans": {
+    "h_c714c5d6d16f81": {
+      "author": "roicastrocasal <roicc@inditex.com>"
+    }
+  }
+}
