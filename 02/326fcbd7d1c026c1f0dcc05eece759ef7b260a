@@ -1,0 +1,14 @@
+Sources/NotchTubeAudio/Utilities/L10n.swift
+  h_c714c5d6d16f81 224-241,243,312
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.6",
+  "base_commit_sha": "02326fcbd7d1c026c1f0dcc05eece759ef7b260a",
+  "prompts": {},
+  "humans": {
+    "h_c714c5d6d16f81": {
+      "author": "roicastrocasal <roicc@inditex.com>"
+    }
+  }
+}
