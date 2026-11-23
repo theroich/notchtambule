@@ -1,0 +1,38 @@
+README.md
+  h_c714c5d6d16f81 64
+Sources/NotchTubeAudio/App/AppEnvironment.swift
+  h_c714c5d6d16f81 22,44,57-58,78
+Sources/NotchTubeAudio/Features/FileActions/FileActionsFeaturePlugin.swift
+  h_c714c5d6d16f81 1-325
+Sources/NotchTubeAudio/Features/FileActions/Services/FileActionPerforming.swift
+  h_c714c5d6d16f81 1-84
+Sources/NotchTubeAudio/Features/FileActions/Services/SystemFileActionPerformer.swift
+  h_c714c5d6d16f81 1-52
+Sources/NotchTubeAudio/Features/FileActions/Views/FileActionsPromptView.swift
+  h_c714c5d6d16f81 1-110
+Sources/NotchTubeAudio/Features/FileActions/Views/FileActionsSettingsView.swift
+  h_c714c5d6d16f81 1-62
+Sources/NotchTubeAudio/Resources/Localizable.xcstrings
+  h_c714c5d6d16f81 1279-1618
+Sources/NotchTubeAudio/Utilities/FileActions.swift
+  h_c714c5d6d16f81 11-15,18-46
+Sources/NotchTubeAudio/Views/SettingsView.swift
+  h_c714c5d6d16f81 72-73
+Tests/NotchTubeAudioTests/FileActionsPluginTests.swift
+  h_c714c5d6d16f81 1-276
+doc/como-crear-extensiones.md
+  h_c714c5d6d16f81 416-419
+doc/estructura.md
+  h_c714c5d6d16f81 34-35
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.6",
+  "base_commit_sha": "9ee2a514fad72a735ea58f750e20eddf88cfd709",
+  "prompts": {},
+  "humans": {
+    "h_c714c5d6d16f81": {
+      "author": "roicastrocasal <roicc@inditex.com>"
+    }
+  }
+}
