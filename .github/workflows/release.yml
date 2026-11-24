@@ -261,6 +261,30 @@ jobs:
             echo
             echo "4. Para el pegado automático concede **Accesibilidad** en Ajustes del Sistema → Privacidad y seguridad."
             echo
+
+            # Sección de CHANGELOG.md para esta versión, si existe.
+            if [[ -f CHANGELOG.md ]]; then
+              changelog_section="$(python3 - "$APP_VERSION" <<'PY'
+          import pathlib, re, sys
+          version = sys.argv[1]
+          text = pathlib.Path("CHANGELOG.md").read_text()
+          pattern = re.compile(r"^## \[?" + re.escape(version) + r"\]?.*$", re.MULTILINE)
+          match = pattern.search(text)
+          if not match:
+              sys.exit(0)
+          rest = text[match.end():]
+          nxt = re.search(r"^## ", rest, re.MULTILINE)
+          print((rest[: nxt.start()] if nxt else rest).strip())
+          PY
+              )"
+              if [[ -n "$changelog_section" ]]; then
+                echo "### Cambios de la versión"
+                echo
+                echo "$changelog_section"
+                echo
+              fi
+            fi
+
             echo "### Cambios"
             echo
             if [[ -n "$prev_tag" ]]; then
