@@ -32,12 +32,20 @@ final class SystemFileActionPerformer: FileActionPerforming {
             throw FileActionError.noExistingFiles
         }
 
+        // Resolve the localized terminal name here, on the main actor. Reading it inside the
+        // completion handler would drag `L10n` (and therefore main-actor isolation) into it.
+        let terminalName = application.displayName
+
         let configuration = NSWorkspace.OpenConfiguration()
         configuration.activates = true
-        NSWorkspace.shared.open([directory], withApplicationAt: appURL, configuration: configuration) { _, error in
-            if let error {
-                Log.app.error("Failed to open terminal \(application.displayName, privacy: .public): \(error.localizedDescription, privacy: .public)")
-            }
+        // `NSWorkspace` invokes this completion handler on a concurrent queue
+        // (`com.apple.launchservices.open-queue`). Marking the closure `@Sendable` keeps it
+        // out of the surrounding `@MainActor` isolation: an isolated closure trips the runtime
+        // executor assertion (`dispatch_assert_queue` -> SIGTRAP) as soon as LaunchServices
+        // finishes opening the terminal, which crashed the app.
+        NSWorkspace.shared.open([directory], withApplicationAt: appURL, configuration: configuration) { @Sendable _, error in
+            guard let error else { return }
+            Log.app.error("Failed to open terminal \(terminalName, privacy: .public): \(error.localizedDescription, privacy: .public)")
         }
     }
 
