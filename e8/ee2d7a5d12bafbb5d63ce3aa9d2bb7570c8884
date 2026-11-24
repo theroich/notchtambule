@@ -1,0 +1,16 @@
+CHANGELOG.md
+  h_c714c5d6d16f81 7-12
+Info.plist
+  h_c714c5d6d16f81 27
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.6",
+  "base_commit_sha": "e8ee2d7a5d12bafbb5d63ce3aa9d2bb7570c8884",
+  "prompts": {},
+  "humans": {
+    "h_c714c5d6d16f81": {
+      "author": "roicastrocasal <roicc@inditex.com>"
+    }
+  }
+}
