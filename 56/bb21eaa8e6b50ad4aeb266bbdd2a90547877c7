@@ -1,0 +1,19 @@
+Sources/NotchTubeAudio/Features/FileActions/Services/SystemFileActionPerformer.swift
+  s_f673b715fd94f3::t_57edadc52c3f77 35-38,41-48
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.6",
+  "base_commit_sha": "56bb21eaa8e6b50ad4aeb266bbdd2a90547877c7",
+  "prompts": {},
+  "sessions": {
+    "s_f673b715fd94f3": {
+      "agent_id": {
+        "tool": "pi",
+        "id": "01a204e4-5d49-72fb-8336-15f4d8d5f701",
+        "model": "deepseek-v4.1-flash"
+      },
+      "human_author": "roicastrocasal <roicc@inditex.com>"
+    }
+  }
+}
