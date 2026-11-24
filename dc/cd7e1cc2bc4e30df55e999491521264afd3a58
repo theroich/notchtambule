@@ -1,0 +1,18 @@
+Sources/NotchTubeAudio/Resources/Localizable.xcstrings
+  h_c714c5d6d16f81 962,968
+Sources/NotchTubeAudio/Views/Clipboard/ClipboardFilterPillsView.swift
+  h_c714c5d6d16f81 8
+Tests/NotchTubeAudioTests/ClipboardNotchUITests.swift
+  h_c714c5d6d16f81 490,527
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.6",
+  "base_commit_sha": "dccd7e1cc2bc4e30df55e999491521264afd3a58",
+  "prompts": {},
+  "humans": {
+    "h_c714c5d6d16f81": {
+      "author": "roicastrocasal <roicc@inditex.com>"
+    }
+  }
+}
