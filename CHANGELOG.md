@@ -4,6 +4,12 @@ Todos los cambios relevantes de **Notchtambule**. El formato sigue [Keep a Chang
 
 Las versiones anteriores a la 0.1.6 están documentadas en las [notas de cada release](https://github.com/theroich/notchtambule/releases).
 
+## [0.1.7] - 2026-11-24
+
+### Changed
+
+- **Interfaz: la pill de filtro «Fijados» ya no muestra el emoji 📌**. Conserva el icono de pin del sistema y deja el texto limpio, tanto en inglés («Pinned») como en español («Fijados»).
+
 ## [0.1.6] - 2026-11-24
 
 ### Fixed
