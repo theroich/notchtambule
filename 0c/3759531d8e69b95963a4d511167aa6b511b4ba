@@ -1,0 +1,14 @@
+.github/workflows/release.yml
+  h_c714c5d6d16f81 264-287
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.6",
+  "base_commit_sha": "0c3759531d8e69b95963a4d511167aa6b511b4ba",
+  "prompts": {},
+  "humans": {
+    "h_c714c5d6d16f81": {
+      "author": "roicastrocasal <roicc@inditex.com>"
+    }
+  }
+}
