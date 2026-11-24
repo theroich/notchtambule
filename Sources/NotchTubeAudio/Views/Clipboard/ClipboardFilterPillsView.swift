@@ -5,7 +5,7 @@
 
 import SwiftUI
 
-/// Horizontal category filter pills (`Todo`, `Texto`, `Enlaces`, `Imágenes`, `Archivos`, `Fijados 📌`)
+/// Horizontal category filter pills (`Todo`, `Texto`, `Enlaces`, `Imágenes`, `Archivos`, `Fijados`)
 /// styled consistently with ``FormatPills``.
 struct ClipboardFilterPillsView: View {
     let selection: ClipboardContentFilter

@@ -959,13 +959,13 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Pinned 📌"
+            "value" : "Pinned"
           }
         },
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Fijados 📌"
+            "value" : "Fijados"
           }
         }
       }

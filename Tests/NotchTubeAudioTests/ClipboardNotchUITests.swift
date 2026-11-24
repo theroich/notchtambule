@@ -487,7 +487,7 @@ struct ClipboardNotchUITests {
         narrowHosting.layoutSubtreeIfNeeded()
         let narrowFittingSize = narrowHosting.fittingSize
 
-        // 1. Height must match a single-line pill row (no multi-line wrapping of 'Imágenes', 'Archivos', or 'Fijados 📌')
+        // 1. Height must match a single-line pill row (no multi-line wrapping of 'Imágenes', 'Archivos', or 'Fijados')
         #expect(abs(notchFittingSize.height - expectedSingleLineHeight) <= 2.0)
         #expect(notchFittingSize.height <= 28.0)
 
@@ -524,7 +524,7 @@ struct ClipboardNotchUITests {
 
         // 5. Verify pill titles match expected single-line strings and callback selection works
         #expect(pillsView.pillTitle(for: .images) == "Imágenes")
-        #expect(pillsView.pillTitle(for: .pinned) == "Fijados 📌")
+        #expect(pillsView.pillTitle(for: .pinned) == "Fijados")
         pillsView.onSelect(.images)
         #expect(selectedFilter == .images)
     }
